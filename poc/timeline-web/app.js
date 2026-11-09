@@ -1,6 +1,25 @@
 'use strict'
 const $ = id => document.getElementById(id)
 const state = { duration: 86400000, end: Date.now(), data: null, selected: null, request: 0, view: 'person' }
+const processIcons = new Map()
+// Only the server's fixed, reviewed icon catalog is parsed as markup. Activity
+// labels remain text and never enter SVG, HTML, URLs, or filesystem paths.
+const iconsReady = fetch('/api/process-icons').then(response => {
+  if (!response.ok) throw new Error('Icon catalog unavailable')
+  return response.json()
+}).then(catalog => {
+  for (const [name, markup] of Object.entries(catalog)) {
+    const icon = new DOMParser().parseFromString(markup, 'text/html').body.firstElementChild
+    if (icon) processIcons.set(name, icon)
+  }
+}).catch(() => {})
+function processIcon(name) {
+  const icon = processIcons.get(String(name).toLowerCase()) || processIcons.get('default')
+  if (icon) return icon.cloneNode(true)
+  const fallback = element('span', '□', 'process-icon')
+  fallback.setAttribute('aria-hidden', 'true')
+  return fallback
+}
 $('theme-toggle').onclick = () => {
   const dark = document.documentElement.dataset.theme !== 'dark'
   document.documentElement.dataset.theme = dark ? 'dark' : 'light'
@@ -51,6 +70,7 @@ function render(data) {
   for (const [, spans] of [...lanes].sort(([a], [b]) => a.localeCompare(b))) {
     const first = spans[0], lane = element('div', undefined, 'lane')
     const label = element('div', undefined, 'lane-label')
+    if (first.agent !== 'human') label.append(processIcon(first.agent))
     label.append(element('span', first.agent === 'human' ? 'You' : first.agent), element('small', `session ${first.session.slice(0, 8)}`))
     const tracks = new Map()
     for (const span of spans) {
@@ -64,7 +84,9 @@ function render(data) {
     const rows = [...tracks.values()].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status) || a.name.localeCompare(b.name))
     for (const row of rows) {
       const subtrack = element('div', undefined, 'subtrack')
-      const trackLabel = element('div', row.name, 'subtrack-label')
+      const trackLabel = element('div', undefined, 'subtrack-label')
+      if (first.agent === 'human' && row.status === 'tracking') trackLabel.append(processIcon(row.name))
+      trackLabel.append(element('span', row.name, 'subtrack-name'))
       trackLabel.title = row.name
       const track = element('div', undefined, 'track')
       for (const span of row.spans) {
@@ -94,6 +116,7 @@ async function refresh() {
     const response = await fetch(`/api/timeline?${params}`)
     if (!response.ok) throw new Error('Timeline request failed')
     const data = await response.json()
+    await iconsReady
     if (sequence !== state.request) return
     state.data = data
     $('connection').textContent = $('live').checked ? 'Live · every 5s' : 'Connected · fixed range'

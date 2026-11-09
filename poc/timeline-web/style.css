@@ -90,6 +90,12 @@ small { color: var(--muted); font-size: 11px; }
 .subtrack:hover .subtrack-label,.subtrack:focus-within .subtrack-label { background: var(--row-hover); color: var(--text); }
 .subtrack:hover .span,.subtrack:focus-within .span { outline: 1px solid var(--text); outline-offset: 0; }
 .subtrack-label { position: sticky; left: 0; z-index: 3; padding: 2px 12px 2px 24px; border-right: 1px solid var(--line); color: var(--muted); background: var(--panel); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.subtrack-label { display: flex; align-items: center; gap: 6px; }
+.subtrack-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.process-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex: 0 0 16px; color: var(--muted); }
+.process-icon svg { display: block; width: 16px; height: 16px; filter: grayscale(1); }
+.process-pi { font: 19px/16px Georgia,serif; }
+.subtrack:hover .process-icon,.subtrack:focus-within .process-icon { color: var(--text); }
 .lane-label small { font-family: ui-monospace,monospace; font-size: 10px; font-weight: 400; }
 .track { position: relative; margin: 0 10px 0 0; min-height: 22px; background: repeating-linear-gradient(to right,transparent 0,transparent calc(25% - 1px),var(--line) calc(25% - 1px),var(--line) 25%); }
 .span { position: absolute; top: 5px; height: 12px; min-width: 2px; border: 0; border-radius: 2px; padding: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-size: 11px; color: var(--span-text); background: var(--unknown); }

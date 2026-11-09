@@ -13,7 +13,8 @@ async function main() {
   const agent=(at,name,session,status)=>({type:'agent',at,agent:name,session,status,id:`${session}-${at}`})
   server.store.events.push(
    {type:'human',session:'human-demo',id:'h1',status:'tracking',app:'Editor <img src=x onerror=alert(1)>',title:'PRIVATE_DEMO_TITLE',start,end:start+1800000},
-   {type:'human',session:'human-demo',id:'h2',status:'idle',start:start+1800000,end:now},
+   {type:'human',session:'human-demo',id:'h2',status:'tracking',app:'librewolf',start:start+1800000,end:start+2000000},
+   {type:'human',session:'human-demo',id:'h3',status:'idle',start:start+2000000,end:now},
    agent(start,'claude','claude-demo','working'),agent(start+10000,'pi','pi-demo','working'))
   // Simulate uninterrupted heartbeat evidence over the full task.
   for(let at=start+20000;at<now;at+=20000) {
@@ -38,11 +39,14 @@ async function main() {
   assert.equal(await page.locator('#agent-filter').isVisible(), false)
   assert.match(await page.locator('.lane-label').innerText(), /You/)
   const humanLane = page.locator('.lane').filter({ has: page.locator('.lane-label', { hasText: 'You' }) })
-  const focusBar = await humanLane.locator('.span[data-status="tracking"]').boundingBox()
+  const focusBar = await humanLane.locator('.span[data-status="tracking"]').first().boundingBox()
   const idleBar = await humanLane.locator('.span[data-status="idle"]').boundingBox()
   assert.ok(focusBar.height <= 14, 'interval bars should be slim')
   assert.ok(idleBar.y > focusBar.y + focusBar.height, 'excluded activity must occupy a different Y track')
-  assert.equal(await humanLane.locator('.subtrack-label').count(), 2)
+  assert.equal(await humanLane.locator('.subtrack-label').count(), 3)
+  assert.equal(await humanLane.locator('.process-icon').count(), 2, 'only application tracks get process icons')
+  assert.ok(await humanLane.locator('.subtrack').filter({ hasText: 'librewolf' }).locator('.process-icon svg path').count() > 0)
+  assert.equal(await humanLane.locator('.subtrack').filter({ hasText: 'idle' }).locator('.process-icon').count(), 0)
   const row = humanLane.locator('.subtrack').first()
   const before = await row.evaluate(el => getComputedStyle(el).backgroundColor)
   await row.hover()
@@ -54,7 +58,7 @@ async function main() {
     assert.equal(channels[0], channels[1]); assert.equal(channels[1], channels[2])
   }
   assert.equal(await page.locator('img').count(),0)
-  await page.locator('.span[data-status="tracking"]').click()
+  await page.locator('.span[data-status="tracking"]').first().click()
   assert.match(await page.locator('#inspector').innerText(),/PRIVATE_DEMO_TITLE/)
   await page.screenshot({path:'/tmp/time-tracker-timeline.png',fullPage:true})
   await page.click('#view-agents')
@@ -62,6 +66,8 @@ async function main() {
   assert.equal(await page.locator('#human-metric').isVisible(), false)
   assert.equal(await page.locator('#agent-metric').isVisible(), true)
   assert.equal(await page.locator('.span[data-status=tracking]').count(), 0)
+  assert.ok(await page.locator('.lane').filter({ hasText: 'claude' }).locator('.lane-label .process-icon svg path').count() > 0)
+  assert.equal(await page.locator('.lane').filter({ hasText: 'pi' }).locator('.process-pi').innerText(), 'π')
   assert.ok(!(await page.locator('#inspector').innerText()).includes('PRIVATE_DEMO_TITLE'))
   await page.selectOption('#agent','claude')
   await page.waitForFunction(()=>document.querySelectorAll('.lane').length===1)

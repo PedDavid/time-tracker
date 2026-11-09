@@ -5,6 +5,9 @@ const http = require('node:http')
 const net = require('node:net')
 const { join, resolve } = require('node:path')
 const { TimelineStore, project, defaultDirectory } = require('./timeline-store.cjs')
+const { processIcon } = require('./process-icons.cjs')
+// A fixed asset catalog shared with the offline report. Labels never select files.
+const processIcons = Object.fromEntries(['claude', 'librewolf', 'foot', 'foot-client', 'nvim', 'neovim', 'pi', 'default'].map(name => [name, processIcon(name)]))
 
 async function startServer({ directory = defaultDirectory(), port = 4318 } = {}) {
   const store = new TimelineStore(directory)
@@ -56,6 +59,10 @@ async function startServer({ directory = defaultDirectory(), port = 4318 } = {})
       let url
       try { url = new URL(req.url, `http://${host}`) }
       catch { res.writeHead(400).end('Invalid URL'); return }
+      if (url.pathname === '/api/process-icons') {
+        res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(processIcons))
+        return
+      }
       if (url.pathname === '/api/timeline') {
         if (store.failed) { res.writeHead(503).end('Journal unavailable; restart the collector after fixing storage'); return }
         const now = Date.now()
