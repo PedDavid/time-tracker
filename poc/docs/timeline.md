@@ -1,7 +1,10 @@
 # Local timeline and background agents
 
-The timeline is an opt-in local web app. You and each Claude Code, Pi, or Kiro
-CLI session have independent lanes. Agent execution continues while you switch
+The timeline is an opt-in local web app. It opens on **Your activity**, showing
+only personal foreground/excluded intervals and your focused-time total. Select
+**Agents** to inspect independent Claude Code, Pi, and Kiro CLI session lanes,
+execution totals, waiting totals, and span details in a separate view. Exports
+follow the active view; personal exports do not contain agent sessions. Agent execution continues while you switch
 applications, go idle, or pause the foreground tracker. Agent wall time can
 overlap your focused time and other agents; it is not CPU time, token generation
 time, or proof of productive work.
@@ -9,32 +12,37 @@ time, or proof of productive work.
 No npm install, database, Grafana instance, native addon, or compositor is needed
 for the collector, agents, or viewer. Node.js 22+ and Linux `flock` are required.
 The existing foreground tracker still needs its native/desktop prerequisites.
-The viewer uses the report's compact neutral theme: light by default, with a
+The viewer uses a compact monochrome theme: light by default, with a
 keyboard-accessible **Dark theme / Light theme** toggle. Switching themes does
 not change the selected range, filters, span selection, or recorded totals.
 Each session is split into slim, labeled activity rows: agent working/waiting
 states, individual applications, and excluded states occupy distinct vertical
 tracks. Hover or select an interval for details; its label stays on the Y axis
-instead of being repeated inside every bar.
+instead of being repeated inside every bar. Filled intervals represent focused
+or working activity; hatched intervals represent excluded or waiting activity.
+Hovering or keyboard-focusing a row increases contrast across its full width.
 
 ## Screenshots
 
-These captures use synthetic activity only, with independent human, Claude,
-Pi, and Kiro CLI lanes. Agent execution overlaps personal focus, while waiting
-is displayed separately. No real prompts, window titles, or activity history
+These captures use synthetic activity only. The default view emphasizes the
+person; agent sessions and their independent totals live in a separate view. No real prompts, window titles, or activity history
 are included.
 
 ### Light theme
 
-![Light timeline with parallel sessions, separate totals and span details](https://github.com/PedDavid/time-tracker/blob/379b69b644f289442d3304180a0f630a2b8c6cd9/poc/docs/screenshots/timeline-desktop.png?raw=true)
+![Personal timeline in light mode with monochrome application and excluded-state tracks](https://github.com/PedDavid/time-tracker/blob/4c2551f57369f6ceca7d748025d671de8858996f/poc/docs/screenshots/timeline-desktop.png?raw=true)
 
 ### Dark theme
 
-![Dark timeline with parallel sessions and selected span details](https://github.com/PedDavid/time-tracker/blob/379b69b644f289442d3304180a0f630a2b8c6cd9/poc/docs/screenshots/timeline-dark.png?raw=true)
+![Personal timeline in dark mode with monochrome application tracks and span details](https://github.com/PedDavid/time-tracker/blob/4c2551f57369f6ceca7d748025d671de8858996f/poc/docs/screenshots/timeline-dark.png?raw=true)
 
 ### Mobile
 
-<img src="https://github.com/PedDavid/time-tracker/blob/379b69b644f289442d3304180a0f630a2b8c6cd9/poc/docs/screenshots/timeline-mobile.png?raw=true" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
+<img src="https://github.com/PedDavid/time-tracker/blob/4c2551f57369f6ceca7d748025d671de8858996f/poc/docs/screenshots/timeline-mobile.png?raw=true" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
+
+### Separate agent view
+
+![Separate agent view with execution/waiting totals and independent session tracks](https://github.com/PedDavid/time-tracker/blob/4c2551f57369f6ceca7d748025d671de8858996f/poc/docs/screenshots/timeline-agents.png?raw=true)
 
 ## Start the collector and viewer
 
@@ -50,7 +58,7 @@ The HTTP interface is read-only and rejects foreign Host/Origin requests.
 Events arrive through a separate Unix socket, restricted to the local user.
 This is a local single-user tool, not an authenticated multi-user server.
 
-Use actor/activity filters, range presets, previous/next, zoom, or exact local
+Use activity filters (plus an agent filter in the Agents view), range presets, previous/next, zoom, or exact local
 dates to explore up to 31 days at a time. Live mode refreshes every five seconds.
 Click or keyboard-focus a span to inspect details. Export JSON downloads the
 current filtered range; treat exported history as private. No external scripts,
@@ -260,7 +268,8 @@ NODE_PATH=/tmp/focus-browser/node_modules node poc/timeline-browser-check.cjs
 The check seeds synthetic in-memory activity, starts an isolated collector, and
 validates lane rendering, safe text, span details, filters, navigation, live
 mode, download, light/dark switching by keyboard, theme retention across
-refreshes, and mobile layout. It cleans up its private test history.
+refreshes, personal-only default/export, separate agent details, full-row hover
+contrast, monochrome rendering, and mobile layout. It cleans up its private test history.
 
 Integration references used during implementation:
 
