@@ -21,6 +21,11 @@ tracks. Hover or select an interval for details; its label stays on the Y axis
 instead of being repeated inside every bar. Filled intervals represent focused
 or working activity; hatched intervals represent excluded or waiting activity.
 Hovering or keyboard-focusing a row increases contrast across its full width.
+Application tracks and agent headers reuse the offline report's fixed process
+icons: Claude and LibreWolf brand marks, terminal/code/Pi artwork, and a neutral
+fallback for other names. State rows and session labels remain text-only.
+Icons are served locally, displayed in grayscale, and never selected from a
+user-supplied path. See [icon provenance and licensing](../icons/README.md).
 
 ## Screenshots
 
@@ -30,19 +35,19 @@ are included.
 
 ### Light theme
 
-![Personal timeline in light mode with monochrome application and excluded-state tracks](https://github.com/PedDavid/time-tracker/blob/4c2551f57369f6ceca7d748025d671de8858996f/poc/docs/screenshots/timeline-desktop.png?raw=true)
+![Personal timeline in light mode with monochrome application and excluded-state tracks](https://github.com/PedDavid/time-tracker/blob/eae09d084a7276844ce5c729ac92d11c0d3fcee4/poc/docs/screenshots/timeline-desktop.png?raw=true)
 
 ### Dark theme
 
-![Personal timeline in dark mode with monochrome application tracks and span details](https://github.com/PedDavid/time-tracker/blob/4c2551f57369f6ceca7d748025d671de8858996f/poc/docs/screenshots/timeline-dark.png?raw=true)
+![Personal timeline in dark mode with monochrome application tracks and span details](https://github.com/PedDavid/time-tracker/blob/eae09d084a7276844ce5c729ac92d11c0d3fcee4/poc/docs/screenshots/timeline-dark.png?raw=true)
 
 ### Mobile
 
-<img src="https://github.com/PedDavid/time-tracker/blob/4c2551f57369f6ceca7d748025d671de8858996f/poc/docs/screenshots/timeline-mobile.png?raw=true" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
+<img src="https://github.com/PedDavid/time-tracker/blob/eae09d084a7276844ce5c729ac92d11c0d3fcee4/poc/docs/screenshots/timeline-mobile.png?raw=true" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
 
 ### Separate agent view
 
-![Separate agent view with execution/waiting totals and independent session tracks](https://github.com/PedDavid/time-tracker/blob/4c2551f57369f6ceca7d748025d671de8858996f/poc/docs/screenshots/timeline-agents.png?raw=true)
+![Separate agent view with execution/waiting totals and independent session tracks](https://github.com/PedDavid/time-tracker/blob/eae09d084a7276844ce5c729ac92d11c0d3fcee4/poc/docs/screenshots/timeline-agents.png?raw=true)
 
 ## Start the collector and viewer
 
