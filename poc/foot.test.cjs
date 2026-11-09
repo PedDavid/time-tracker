@@ -239,7 +239,7 @@ test('terminal checkpoint rows are validated, restored, and HTML-escaped', () =>
   assert.deepEqual(restored.snapshot(5000).terminals, snapshot.terminals)
   const html = renderHtml({ ...snapshot, footEnabled: true })
   assert.match(html, /&lt;script&gt;bad&lt;\/script&gt;/)
-  assert.doesNotMatch(html, /<script>/)
+  assert.deepEqual([...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]), [require('./report-tree.cjs').script])
   snapshot.terminals[0].ms = 9999
   assert.throws(() => validate(record, false, true), /Invalid checkpoint/)
 })
