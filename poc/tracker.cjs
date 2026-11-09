@@ -22,6 +22,7 @@ function options(args) {
     html: null,
     titles: false,
     foot: false,
+    kitty: false,
     activity: true,
     'idle-timeout': 300,
     'activity-helper': resolve(__dirname, '.activity-build/activity-idle'),
@@ -42,6 +43,8 @@ Usage: node poc/tracker.cjs [options]
   --html PATH           Save a private standalone HTML report on exit (new file only)
   --titles              Opt in to window-title collection (may contain private data)
   --foot                Opt in to local foreground-executable tracking for foot
+  --terminals           Same, for every supported terminal: foot and kitty (kitty uses its
+                        remote-control socket, $KITTY_LISTEN_ON). Implies --foot's data.
   --foot-interval MS    Foot context refresh, 500–60000 (default 1000)
   --idle-timeout SEC    Exclude input-idle time after 1–86400 seconds (default 300)
   --activity-helper PATH  Locally built read-only Wayland idle helper
@@ -57,6 +60,7 @@ Interactive: p = pause/resume, r = report, q = quit. See poc/docs/activity.md fo
     if (flag === '--json') { result.json = true; continue }
     if (flag === '--titles') { result.titles = true; continue }
     if (flag === '--foot') { result.foot = true; continue }
+    if (flag === '--terminals') { result.foot = true; result.kitty = true; continue }
     if (flag === '--timeline') { result.timeline = true; continue }
     if (flag === '--no-state') { result.noState = true; continue }
     if (flag === '--no-activity') { result.activity = false; continue }
@@ -114,7 +118,7 @@ function main() {
   let footTimer
   let footSoon
   let timelineTimer
-  const observer = new FootObserver({ native, ledger, clock, titles: config.titles, enabled: config.foot })
+  const observer = new FootObserver({ native, ledger, clock, titles: config.titles, enabled: config.foot, kitty: config.kitty })
   const gate = new ActivityGate({ native, ledger, observer, clock, onError: () => { errors++ } })
   const activity = config.activity ? new ActivityProvider({ idleTimeoutMs: Math.round(config['idle-timeout'] * 1000), helper: config['activity-helper'], clock }) : null
   if (activity) ledger.setActivity({ kind: 'activity-unavailable' }, clock())

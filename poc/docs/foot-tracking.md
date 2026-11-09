@@ -146,3 +146,23 @@ Live association was checked against existing terminals without launching or
 manipulating desktop windows. Synthetic tests prove the transition logic; a
 full live shell/editor/build/background-job/pipeline acceptance run remains a
 manual follow-up. No support for other terminal emulators is claimed.
+
+## kitty (via remote control)
+
+`--terminals` (which implies the `--foot` data) also resolves kitty windows; plain
+`--foot` never contacts kitty. kitty runs every window in one process, so
+the PTY proof above cannot apply. The tracker instead asks kitty's own
+remote-control socket (`kitten @ --to $KITTY_LISTEN_ON ls`) which tab/window is
+active in the focused OS window (matched by its `wm_class` against the compositor
+class) and which process ids are in its foreground group, then applies the same
+single-root and `/proc` executable checks as foot, including start-time/executable
+revalidation. Titles, cwd, cmdlines and env in kitty's reply are never read; only
+a basename is stored.
+
+Requires `allow_remote_control` and a `listen_on` socket in your kitty config
+(nothing is configured by the tracker); the tracker reads the address from
+`KITTY_LISTEN_ON`, which kitty sets in its windows. If it is missing or kitty does
+not answer within 750 ms, the window is recorded as unknown, never guessed. A
+subprocess is spawned per poll (about 30 ms, default every second). Executables with a
+version-number basename (e.g. `.../claude/versions/2.1.319`) resolve to the
+kernel process name (`claude`) for foot and kitty alike.

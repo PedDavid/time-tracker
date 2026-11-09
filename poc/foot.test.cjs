@@ -243,3 +243,45 @@ test('terminal checkpoint rows are validated, restored, and HTML-escaped', () =>
   snapshot.terminals[0].ms = 9999
   assert.throws(() => validate(record, false, true), /Invalid checkpoint/)
 })
+
+test('kitty: resolves the active window foreground root through kitty remote control and proc, fail-closed', () => {
+  const { resolveKitty, isKitty } = require('./kitty.cjs')
+  const window = { id: 1, info: { name: 'kitty-111', execName: 'kitty', processId: 10 } }
+  const tree = (extra = {}) => [
+    { wm_class: 'kitty-111', is_focused: true, tabs: [{ is_active: true, windows: [
+      { id: 2, is_active: false, foreground_processes: [{ pid: 90 }] },
+      { id: 3, is_active: true, title: 'PRIVATE', cmdline: ['PRIVATE'], foreground_processes: [{ pid: 50 }, { pid: 51 }], ...extra }] }] },
+    { wm_class: 'kitty-222', is_focused: false, tabs: [{ is_active: true, windows: [{ id: 4, is_active: true, foreground_processes: [{ pid: 90 }] }] }] },
+  ]
+  const stats = { 50: { pid: 50, ppid: 7, state: 'S', start: '1' }, 51: { pid: 51, ppid: 50, state: 'S', start: '2' }, 90: { pid: 90, ppid: 7, state: 'S', start: '3' } }
+  const provider = { stat: (pid) => stats[pid], executable: (pid) => pid === 50 ? '/home/u/.local/share/claude/versions/2.1.319' : '/usr/bin/other', comm: () => 'claude\n' }
+  const options = (ls) => ({ address: 'unix:@kitty-test', ls, provider })
+  assert.equal(isKitty(window), true)
+  assert.equal(isKitty({ id: 1, info: { name: 'foot', execName: 'foot' } }), false)
+  assert.equal(resolveKitty({ id: 1, info: { name: 'foot' } }, options(() => tree())), null)
+  assert.deepEqual(resolveKitty(window, options(() => tree())), { status: 'resolved', executable: 'claude', foregroundPid: 50, source: 'kitty-remote-control-foreground-root' })
+  assert.ok(!JSON.stringify(resolveKitty(window, options(() => tree()))).includes('PRIVATE'))
+  assert.equal(resolveKitty(window, { ...options(() => tree()), address: '' }).reason, 'kitty-remote-control-unavailable')
+  assert.equal(resolveKitty(window, options(() => { throw new Error('socket down') })).reason, 'kitty-remote-control-unavailable')
+  assert.equal(resolveKitty({ id: 1, info: { name: 'kitty-999', execName: 'kitty' } }, options(() => tree())).reason, 'kitty-window-not-found')
+  assert.equal(resolveKitty(window, options(() => [...tree(), ...tree()].map((o, i) => ({ ...o, is_focused: true })))).reason, 'kitty-ambiguous-window')
+  stats[51] = { pid: 51, ppid: 7, state: 'S', start: '2' }
+  assert.equal(resolveKitty(window, options(() => tree())).reason, 'multiple-foreground-roots')
+})
+
+test('kitty is observed only when enabled; plain foot mode never contacts kitty', () => {
+  const window = { id: 5, info: { name: 'kitty-111', execName: 'kitty', processId: 10 } }
+  const run = (kitty) => {
+    const calls = []
+    const native = { activeWindow: () => window, openWindows: () => [window] }
+    const ledger = new Accounting(0)
+    const observer = new FootObserver({ native, ledger, clock: () => 0, enabled: true, kitty,
+      kittyResolver: () => { calls.push('kitty'); return { status: 'resolved', executable: 'claude' } } })
+    observer.poll()
+    return { calls, context: ledger.focusTerminal }
+  }
+  assert.deepEqual(run(false).calls, [])
+  assert.equal(run(false).context, null)
+  assert.deepEqual(run(true).calls, ['kitty'])
+  assert.equal(run(true).context.executable, 'claude')
+})

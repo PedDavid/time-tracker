@@ -45,6 +45,7 @@ function list(path, limit) {
 const proc = {
   stat: (pid) => parseStat(read(`/proc/${pid}/stat`)),
   executable: (pid) => fs.readlinkSync(`/proc/${pid}/exe`),
+  comm: (pid) => read(`/proc/${pid}/comm`).trim(),
   children: (pid) => read(`/proc/${pid}/task/${pid}/children`).trim().split(/\s+/).filter(Boolean).map(Number),
   fds: (pid) => list(`/proc/${pid}/fdinfo`, 256),
   fdinfo: (pid, fd) => read(`/proc/${pid}/fdinfo/${fd}`),
@@ -56,6 +57,15 @@ const proc = {
   },
 }
 
+// Versioned installs (e.g. .../claude/versions/2.1.319) have a version-number exe
+// basename; the kernel's process name is then the meaningful identity.
+function executableFor(provider, pid, path) {
+  const name = executableName(path)
+  if (/^\d+(\.\d+){1,3}$/.test(name) && provider.comm) {
+    try { return executableName(provider.comm(pid)) || name } catch { /* keep the basename */ }
+  }
+  return name
+}
 function isFoot(window) {
   return Boolean(window?.id && (window.info?.name?.toLowerCase() === 'foot' || window.info?.execName === 'foot'))
 }
@@ -123,7 +133,7 @@ function resolveFoot(window, windows, provider = proc, clock = () => performance
     if (root.pid !== anchor.pid && root.ppid !== anchor.pid) return unknown('detached-foreground-root')
     if (['T', 't', 'X'].includes(root.state)) return unknown('foreground-not-running')
     const path = provider.executable(root.pid)
-    const executable = executableName(path)
+    const executable = executableFor(provider, root.pid, path)
     if (!executable) return unknown('missing-executable')
     check()
     // Revalidate owner, controlling-TTY anchor, leader, and executable. Start
@@ -148,4 +158,4 @@ function resolveFoot(window, windows, provider = proc, clock = () => performance
   }
 }
 
-module.exports = { isFoot, resolveFoot, parseStat, SOURCE }
+module.exports = { isFoot, resolveFoot, parseStat, SOURCE, proc, executableName, executableFor }
