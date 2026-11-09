@@ -1,6 +1,7 @@
 # Private generated reports and checkpoints are not source code.
 *.html
 !example-report.html
+!timeline-web/index.html
 *.json
 *.json.lock
 .*.tmp

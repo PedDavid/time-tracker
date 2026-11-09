@@ -1,7 +1,8 @@
 # Local focus-time tracker PoC
 
-A Node CLI with no npm dependencies, using the local **x-win Hyprland fork**. No server,
-account, database, or network requests. Private local checkpoints now preserve
+A Node CLI with no npm dependencies, using the local **x-win Hyprland fork**. No
+account or hosted database. An optional local collector/viewer supports
+[chronological activity and background agent tasks](docs/timeline.md). Private local checkpoints preserve
 progress automatically (opt out with `--no-state`). This directory
 is maintained in [PedDavid/time-tracker](https://github.com/PedDavid/time-tracker),
 separate from the x-win fork pinned as a submodule. See the [root setup guide](../README.md)
@@ -326,7 +327,9 @@ IPC error and recovery are also covered by deterministic synthetic tests.
   foot executable totals. No input-event contents or raw event timeline are saved. Use `--no-state`
   to disable that persistence. `--html PATH` separately creates an HTML report.
   Both files can contain private activity history. No full event timeline is
-  kept. Stdout redirection is also your choice; scrollback may retain reports.
+  kept unless `--timeline` is enabled. Opt-in agent integrations separately save
+  lifecycle intervals; see the [timeline guide](docs/timeline.md).
+  Stdout redirection is also your choice; scrollback may retain reports.
 
 **This measures foreground-window time, not verified active work.**
 Automatic idle/lock gating is conservative, capability-limited and subject to

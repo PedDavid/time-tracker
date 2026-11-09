@@ -1,8 +1,9 @@
 # Local focus-time tracker
 
 A small, local-only CLI time tracker for **Linux / Hyprland**, using a pinned
-[x-win fork](https://github.com/PedDavid/x-win/tree/feat/hyprland-ipc). No server,
-account, telemetry, or npm dependencies. This is a standalone experiment, not
+[x-win fork](https://github.com/PedDavid/x-win/tree/feat/hyprland-ipc). No account,
+telemetry, or npm dependencies; an optional local server provides a timeline.
+This is a standalone experiment, not
 Solidtime and not an integration with a hosted time-tracking service.
 
 ## Features
@@ -13,6 +14,8 @@ Solidtime and not an integration with a hosted time-tracking service.
 - Optional window-title breakdown (often reflects the active browser tab).
 - Opt-in foot foreground-job executable tracking with explicit unknown fallbacks.
 - Pi/Claude title-derived session labels when both foot and title tracking are on.
+- Independent background task timing for Claude Code, Pi, and Kiro CLI through opt-in lifecycle integrations.
+- A local interactive timeline with separate human/agent session lanes, filters, zoom, and span details.
 - Private atomic checkpoints every five seconds, with automatic recovery.
 - Self-contained HTML reports with an expandable application tree, search,
   light/dark themes, charts and excluded-time breakdowns.
@@ -67,6 +70,30 @@ when needed. Build the native addon on each machine: the compiled `.node` file
 is not committed and should not be copied between architectures or libc targets.
 The commands above target Linux GNU; a musl build needs its own toolchain and
 artifact path and has not been tested here.
+
+### Background agents and interactive timeline
+
+```sh
+# Local collector/viewer; no native addon or desktop needed for agents/reports.
+node poc/timeline-server.cjs
+# On the same machine, open http://127.0.0.1:4318.
+
+# In your Hyprland session, opt in to your own chronological activity:
+node poc/tracker.cjs --timeline
+
+# Claude: inject hooks for this invocation and track background tasks.
+node poc/agent-run.cjs --agent claude -- claude \
+  --settings "$(node poc/agent-config.cjs claude)"
+
+# Pi: load the lifecycle extension explicitly.
+pi -e /absolute/time-tracker/poc/integrations/pi-timeline.mjs
+```
+
+See the [timeline and agent integration guide](poc/docs/timeline.md) for Kiro
+configuration, supported lifecycle events, private storage, and recovery.
+Agent execution overlaps your activity and other agents; it is reported
+separately. Kiro approval pauses within a turn cannot currently be separated.
+Existing summary history cannot be reconstructed into a timeline.
 
 If you cloned without submodules:
 
