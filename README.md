@@ -91,8 +91,9 @@ pi -e /absolute/time-tracker/poc/integrations/pi-timeline.mjs
 
 See the [timeline and agent integration guide](poc/docs/timeline.md) for Kiro
 configuration, supported lifecycle events, private storage, and recovery.
-The monochrome viewer opens on your personal activity; agent timelines and
-totals are available in a separate **Agents** view.
+The monochrome viewer opens on your personal activity. Enable **Include agents**
+to compare agent processing with your focus on the same time axis, with your
+tracks first and separate agent totals.
 Agent execution overlaps your activity and other agents; it is reported
 separately. Kiro approval pauses within a turn cannot currently be separated.
 Existing summary history cannot be reconstructed into a timeline.

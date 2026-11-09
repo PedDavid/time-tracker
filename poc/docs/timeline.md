@@ -1,10 +1,13 @@
 # Local timeline and background agents
 
-The timeline is an opt-in local web app. It opens on **Your activity**, showing
-only personal foreground/excluded intervals and your focused-time total. Select
-**Agents** to inspect independent Claude Code, Pi, and Kiro CLI session lanes,
-execution totals, waiting totals, and span details in a separate view. Exports
-follow the active view; personal exports do not contain agent sessions. Agent execution continues while you switch
+The timeline is an opt-in local web app. It opens showing only personal
+foreground/excluded intervals and your focused-time total. Enable **Include
+agents** to add Claude Code, Pi, and Kiro CLI tracks below your activity on the
+same time axis. Your activity and focused total stay visible, making it easier
+to compare agent processing with your focus, pauses, and application switches.
+Agent execution/waiting totals remain separate from your focused total.
+Exports follow the toggle: off exports personal activity only; on includes
+personal activity plus the selected agents. Agent execution continues while you switch
 applications, go idle, or pause the foreground tracker. Agent wall time can
 overlap your focused time and other agents; it is not CPU time, token generation
 time, or proof of productive work.
@@ -30,24 +33,25 @@ user-supplied path. See [icon provenance and licensing](../icons/README.md).
 ## Screenshots
 
 These captures use synthetic activity only. The default view emphasizes the
-person; agent sessions and their independent totals live in a separate view. No real prompts, window titles, or activity history
+person; enabling Include agents adds agent sessions and independent totals to
+the same timeline, with personal tracks first. No real prompts, window titles, or activity history
 are included.
 
 ### Light theme
 
-![Personal timeline in light mode with monochrome application and excluded-state tracks](https://github.com/PedDavid/time-tracker/blob/eae09d084a7276844ce5c729ac92d11c0d3fcee4/poc/docs/screenshots/timeline-desktop.png?raw=true)
+![Personal timeline in light mode with monochrome application and excluded-state tracks](https://github.com/PedDavid/time-tracker/blob/08dea7e18bd7c4817711a7dcae977517a69a9ab3/poc/docs/screenshots/timeline-desktop.png?raw=true)
 
 ### Dark theme
 
-![Personal timeline in dark mode with monochrome application tracks and span details](https://github.com/PedDavid/time-tracker/blob/eae09d084a7276844ce5c729ac92d11c0d3fcee4/poc/docs/screenshots/timeline-dark.png?raw=true)
+![Personal timeline in dark mode with monochrome application tracks and span details](https://github.com/PedDavid/time-tracker/blob/08dea7e18bd7c4817711a7dcae977517a69a9ab3/poc/docs/screenshots/timeline-dark.png?raw=true)
 
 ### Mobile
 
-<img src="https://github.com/PedDavid/time-tracker/blob/eae09d084a7276844ce5c729ac92d11c0d3fcee4/poc/docs/screenshots/timeline-mobile.png?raw=true" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
+<img src="https://github.com/PedDavid/time-tracker/blob/08dea7e18bd7c4817711a7dcae977517a69a9ab3/poc/docs/screenshots/timeline-mobile.png?raw=true" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
 
-### Separate agent view
+### Include agents for comparison
 
-![Separate agent view with execution/waiting totals and independent session tracks](https://github.com/PedDavid/time-tracker/blob/eae09d084a7276844ce5c729ac92d11c0d3fcee4/poc/docs/screenshots/timeline-agents.png?raw=true)
+![Combined timeline with personal activity above agent processing on one shared time axis](https://github.com/PedDavid/time-tracker/blob/08dea7e18bd7c4817711a7dcae977517a69a9ab3/poc/docs/screenshots/timeline-agents.png?raw=true)
 
 ## Start the collector and viewer
 
@@ -63,8 +67,11 @@ The HTTP interface is read-only and rejects foreign Host/Origin requests.
 Events arrive through a separate Unix socket, restricted to the local user.
 This is a local single-user tool, not an authenticated multi-user server.
 
-Use activity filters (plus an agent filter in the Agents view), range presets, previous/next, zoom, or exact local
-dates to explore up to 31 days at a time. Live mode refreshes every five seconds.
+Use personal activity filters (plus an agent filter when Include agents is on),
+range presets, previous/next, zoom, or exact local
+dates to explore up to 31 days at a time. Personal activity filters affect only
+your tracks; included agent processing stays visible for context. Selecting a
+specific agent keeps your own activity visible. Both use one shared time range. Live mode refreshes every five seconds.
 Click or keyboard-focus a span to inspect details. Export JSON downloads the
 current filtered range; treat exported history as private. No external scripts,
 fonts, assets, or telemetry are loaded.
@@ -273,7 +280,7 @@ NODE_PATH=/tmp/focus-browser/node_modules node poc/timeline-browser-check.cjs
 The check seeds synthetic in-memory activity, starts an isolated collector, and
 validates lane rendering, safe text, span details, filters, navigation, live
 mode, download, light/dark switching by keyboard, theme retention across
-refreshes, personal-only default/export, separate agent details, full-row hover
+refreshes, personal-only default/export, optional agent overlay, human-first ordering, shared-axis comparison, full-row hover
 contrast, monochrome rendering, and mobile layout. It cleans up its private test history.
 
 Integration references used during implementation:
