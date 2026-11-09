@@ -12,12 +12,12 @@ Synthetic data only, generated from the updated example report.
 
 ### Light theme
 
-![Light theme with expanded application hierarchy](screenshots/report-light.png)
+![Light theme with expanded application hierarchy](https://github.com/PedDavid/time-tracker/blob/7329bacac933913d2653e915401899e1df3aa2c3/docs/screenshots/report-light.png?raw=true)
 
 ### Dark theme
 
-![Dark theme with expanded application hierarchy](screenshots/report-dark.png)
+![Dark theme with expanded application hierarchy](https://github.com/PedDavid/time-tracker/blob/7329bacac933913d2653e915401899e1df3aa2c3/docs/screenshots/report-dark.png?raw=true)
 
 ### Mobile
 
-![Mobile report with the foot application expanded](screenshots/report-mobile.png)
+![Mobile report with the foot application expanded](https://github.com/PedDavid/time-tracker/blob/7329bacac933913d2653e915401899e1df3aa2c3/docs/screenshots/report-mobile.png?raw=true)
