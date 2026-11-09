@@ -1,6 +1,6 @@
 'use strict'
 const $ = id => document.getElementById(id)
-const state = { duration: 86400000, end: Date.now(), data: null, selected: null, request: 0, view: 'person' }
+const state = { duration: 86400000, end: Date.now(), data: null, selected: null, request: 0 }
 const processIcons = new Map()
 // Only the server's fixed, reviewed icon catalog is parsed as markup. Activity
 // labels remain text and never enter SVG, HTML, URLs, or filesystem paths.
@@ -67,7 +67,7 @@ function render(data) {
     if (!lanes.has(span.actor)) lanes.set(span.actor, [])
     lanes.get(span.actor).push(span)
   }
-  for (const [, spans] of [...lanes].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [, spans] of [...lanes].sort(([a], [b]) => Number(!a.startsWith('human:')) - Number(!b.startsWith('human:')) || a.localeCompare(b))) {
     const first = spans[0], lane = element('div', undefined, 'lane')
     const label = element('div', undefined, 'lane-label')
     if (first.agent !== 'human') label.append(processIcon(first.agent))
@@ -111,7 +111,7 @@ function render(data) {
 async function refresh() {
   if ($('live').checked) state.end = Date.now()
   const sequence = ++state.request
-  const params = new URLSearchParams({ from: Math.round(state.end - state.duration), to: Math.round(state.end), agent: state.view === 'person' ? 'human' : $('agent').value, status: $('status').value })
+  const params = new URLSearchParams({ from: Math.round(state.end - state.duration), to: Math.round(state.end), agent: 'human', includeAgents: $('include-agents').checked ? $('agent').value : '', status: $('status').value })
   try {
     const response = await fetch(`/api/timeline?${params}`)
     if (!response.ok) throw new Error('Timeline request failed')
@@ -129,32 +129,19 @@ async function refresh() {
     $('notice').textContent = 'Could not load the timeline. Check that the local collector is running. Displayed data may be stale.'
   }
 }
-function switchView(view) {
-  state.view = view
-  state.selected = null
+function updateAgentVisibility() {
+  const included = $('include-agents').checked
+  $('agent-filter').hidden = !included
+  $('agent-metric').hidden = !included
+  $('waiting-metric').hidden = !included
+  $('agent-note').hidden = !included
+  $('trace-title').textContent = included ? 'Your activity alongside agents' : 'Your activity'
+  $('legend-active').textContent = included ? 'Focused / working' : 'Focused'
+  if (!included && state.data) render({ ...state.data, spans: state.data.spans.filter(span => span.agent === 'human') })
   state.data = null
-  $('timeline').replaceChildren()
-  inspect(null)
-  const personal = view === 'person'
-  $('view-person').setAttribute('aria-pressed', String(personal))
-  $('view-agents').setAttribute('aria-pressed', String(!personal))
-  $('agent-filter').hidden = personal
-  $('human-metric').hidden = !personal
-  $('agent-metric').hidden = personal
-  $('waiting-metric').hidden = personal
-  $('agent-note').hidden = personal
-  $('trace-title').textContent = personal ? 'Your activity' : 'Agent activity'
-  $('legend-active').textContent = personal ? 'Focused' : 'Working'
-  $('empty-title').textContent = personal ? 'No personal activity in this range' : 'No agent activity in this range'
-  $('empty-help').textContent = personal ? 'Start the focus tracker with --timeline to record your activity.' : 'Connect Claude, Pi or Kiro using the integration guide to record agent tasks.'
-  const filters = personal
-    ? [['', 'All activity'], ['tracking', 'Focused'], ['paused', 'Paused'], ['idle', 'Idle'], ['locked', 'Locked'], ['waiting', 'Waiting'], ['activity-unavailable', 'Activity unavailable'], ['IPC unavailable', 'IPC unavailable'], ['no focus', 'No focus']]
-    : [['', 'All activity'], ['working', 'Working'], ['waiting', 'Waiting'], ['unknown', 'Unknown / interrupted']]
-  $('status').replaceChildren(...filters.map(([value, text]) => { const option = element('option', text); option.value = value; return option }))
   void refresh()
 }
-$('view-person').onclick = () => switchView('person')
-$('view-agents').onclick = () => switchView('agents')
+$('include-agents').onchange = updateAgentVisibility
 for (const id of ['agent', 'status', 'live']) $(id).onchange = refresh
 $('range').onchange = () => { state.duration = Number($('range').value); void refresh() }
 $('previous').onclick = () => { $('live').checked = false; state.end = Math.max(state.duration, state.end - state.duration); void refresh() }
@@ -173,5 +160,5 @@ $('export').onclick = () => {
   const url = URL.createObjectURL(blob), link = element('a')
   link.href = url; link.download = 'focus-timeline.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
-switchView('person')
+updateAgentVisibility()
 setInterval(() => { if (!document.hidden) void refresh() }, 5000)

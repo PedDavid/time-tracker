@@ -4,10 +4,11 @@
 <body>
 <header><div class="brand"><span class="mark" aria-hidden="true">◷</span><div><h1>time-tracker <span>/ Timeline</span></h1><p>Your time, in focus.</p></div></div><div class="header-tools"><div class="connection"><span id="dot"></span><span id="connection" role="status">Connecting</span></div><button id="theme-toggle" type="button" aria-pressed="false">Dark theme</button></div></header>
 <main>
-<nav class="view-switch" aria-label="Timeline view"><button id="view-person" type="button" aria-pressed="true">Your activity</button><button id="view-agents" type="button" aria-pressed="false">Agents</button></nav>
+
 <section class="toolbar" aria-label="Timeline controls">
+<label class="include-agents"><input id="include-agents" type="checkbox"> Include agents</label>
 <label id="agent-filter" hidden>Agent<select id="agent"><option value="agents">All agents</option><option>claude</option><option>pi</option><option>kiro-cli</option></select></label>
-<label>Activity<select id="status"><option value="">All activity</option><option value="working">Agent working</option><option value="waiting">Waiting</option><option value="tracking">Your focus</option><option value="paused">Paused</option><option value="idle">Idle</option><option value="locked">Locked</option><option value="unknown">Unknown / interrupted</option><option value="activity-unavailable">Activity unavailable</option><option value="IPC unavailable">IPC unavailable</option><option value="no focus">No focus</option></select></label>
+<label>Your activity<select id="status"><option value="">All activity</option><option value="tracking">Focused</option><option value="paused">Paused</option><option value="idle">Idle</option><option value="locked">Locked</option><option value="waiting">Waiting</option><option value="activity-unavailable">Activity unavailable</option><option value="IPC unavailable">IPC unavailable</option><option value="no focus">No focus</option></select></label>
 <label>Range<select id="range"><option value="900000">15 minutes</option><option value="3600000">1 hour</option><option value="21600000">6 hours</option><option value="86400000" selected>24 hours</option></select></label>
 <div class="navigation"><button id="previous" aria-label="Previous time range">←</button><button id="next" aria-label="Next time range">→</button><button id="zoom-in" aria-label="Zoom in">＋</button><button id="zoom-out" aria-label="Zoom out">−</button></div>
 <label class="live"><input type="checkbox" id="live" checked> Live</label><button id="export">Export JSON</button>

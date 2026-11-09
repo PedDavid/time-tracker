@@ -112,7 +112,7 @@ class TimelineStore {
   }
 }
 
-function project(events, now = Date.now(), { from = now - 86400000, to = now, agent = '', status = '' } = {}) {
+function project(events, now = Date.now(), { from = now - 86400000, to = now, agent = '', status = '', includeAgents = '' } = {}) {
   const spans = []
   const sessions = new Map()
   const humans = new Map()
@@ -154,7 +154,9 @@ function project(events, now = Date.now(), { from = now - 86400000, to = now, ag
     }
   }
   for (const s of sessions.values()) finish(s, now)
-  const visible = spans.filter(s => s.end > from && s.start < to && (!agent || (agent === 'agents' ? s.agent !== 'human' : s.agent === agent)) && (!status || s.status === status))
+  const visible = spans.filter(s => s.end > from && s.start < to && (includeAgents
+    ? (s.agent === 'human' ? (!status || s.status === status) : (includeAgents === 'agents' || s.agent === includeAgents))
+    : ((!agent || (agent === 'agents' ? s.agent !== 'human' : s.agent === agent)) && (!status || s.status === status))))
     .map(s => ({ ...s, start: Math.max(from, s.start), end: Math.min(to, s.end) }))
     .sort((a, b) => a.start - b.start || a.actor.localeCompare(b.actor))
   const totals = { humanMs: 0, agentMs: 0, waitingMs: 0 }
