@@ -171,7 +171,10 @@ all** control the hierarchy. Clearing search restores the previous expansion.
 The theme button switches between light and dark for the current report view.
 Process rows use small selfh.st brand icons where available and neutral fallbacks
 otherwise; titles and session labels remain text-only. Icons are embedded in the
-report, with provenance and licensing in `poc/icons/README.md`.
+report, with provenance and licensing in `poc/icons/README.md`. A compact footer
+links to selfh.st and CC BY 4.0; hover, focus or tap its information button for
+modification details. Credits travel with each report. Those links connect only
+when clicked.
 
 Application totals remain authoritative. Executable and title breakdowns overlap
 and must not be added together; agent labels may cover only part of executable

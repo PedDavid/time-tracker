@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-+9NzJThJy1qw4AmdcBpuURnA8SxrcIc5ZWqHQ8dLTZc='; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-07OlQhGeDPUibvHnt6e6ALDiU3GZ3sF3nXsQbc9J+gs='; base-uri 'none'; form-action 'none'">
 <title>Focus time · Local session</title>
 <style>
 *{box-sizing:border-box}
@@ -36,6 +36,18 @@ footer{font-size:12px;color:var(--muted);margin-top:28px}
 pre{white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:760px){header{align-items:flex-start}.cards{grid-template-columns:repeat(2,1fr)}.bar-cell{display:none}.badge{white-space:normal}}
 @media print{body{background:#fff;color:#111}main{padding:0}section,.card{break-inside:avoid}.donut,.bar,.dot{print-color-adjust:exact}}
+
+.footer-line{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--line);padding-top:16px;flex-wrap:wrap}
+.icon-credit{margin-left:auto;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.icon-credit a{color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.icon-credit a:hover{color:var(--text)}
+.credit-info{display:inline-flex;position:relative;padding:5px;margin:-5px}
+#credit-toggle{display:grid;place-items:center;width:24px;height:24px;padding:0;border:0;border-radius:50%;color:var(--muted);font:12px Georgia,serif;background:transparent}
+#credit-toggle:before{content:'';position:absolute;width:14px;height:14px;border:1px solid currentColor;border-radius:50%;pointer-events:none}
+.credit-tooltip{visibility:hidden;position:absolute;right:0;bottom:100%;width:270px;max-width:calc(100vw - 48px);padding:11px 13px;border-radius:6px;background:var(--text);color:var(--bg);white-space:normal;font-size:11px;line-height:1.6;box-shadow:0 3px 9px #0002;z-index:1}
+.credit-info:not([data-dismissed]):hover .credit-tooltip,.credit-info:not([data-dismissed]):focus-within .credit-tooltip,.credit-info:has([aria-expanded=true]) .credit-tooltip{visibility:visible}
+.footer-privacy{font-size:11px;line-height:1.6;margin-top:12px}
+@media print{.credit-tooltip{visibility:visible;position:static;box-shadow:none;padding:0;width:auto;max-width:none;background:transparent;color:inherit}.credit-info{display:block;padding:0;margin:0}#credit-toggle{display:none}.icon-credit{white-space:normal;flex-wrap:wrap}}
 
 :root{color-scheme:light;--bg:#fff;--panel:#fff;--line:#e5e5e5;--text:#171717;--muted:#737373;--accent:#2563eb;--soft:#f5f5f5}
 
@@ -132,7 +144,7 @@ section{padding:16px}
 <section><details class="supporting"><summary>Agent session labels</summary><p class="muted">Pi/Claude foreground executables correlated with observed window titles. A named session may appear here, but these are literal title-derived labels, not verified session names or IDs. Decorations can split entries and identical titles merge. Labels wait for a matching process observation after title changes.</p><div class="table-wrap"><table><thead><tr><th>Agent</th><th>Observed title / session label</th><th class="number">Time</th></tr></thead><tbody><tr><td>pi</td><td class="title">π - Synthetic tracker task</td><td class="number">00:08:00</td></tr><tr><td>claude</td><td class="title">Claude — Synthetic infra task</td><td class="number">00:06:00</td></tr></tbody></table></div></details></section>
 <section><h2>Time left out</h2><div class="table-wrap"><table><tbody><tr><td>paused</td><td class="number">00:05:00</td><td class="number muted">6.7% of elapsed</td></tr><tr><td>idle</td><td class="number">00:04:00</td><td class="number muted">5.3% of elapsed</td></tr><tr><td>locked</td><td class="number">00:03:00</td><td class="number muted">4.0% of elapsed</td></tr><tr><td>activity-unavailable</td><td class="number">00:01:00</td><td class="number muted">1.3% of elapsed</td></tr><tr><td>no focus</td><td class="number">00:01:00</td><td class="number muted">1.3% of elapsed</td></tr><tr><td>IPC unavailable</td><td class="number">00:01:00</td><td class="number muted">1.3% of elapsed</td></tr></tbody></table></div><p class="muted">IPC outage notifications: 1. Paused, no-focus, idle, locked and unavailable periods are not attributed when their gates are enabled.</p></section>
 <div class="notice"><strong>Foreground time is not proof of active work.</strong> Automatic idle/lock gating was enabled at this snapshot; signal: active. Input-idle cutoff: 00:05:00; pre-cutoff grace is counted. Unavailable signals exclude time. Lock detection is polled and reviewed for Hyprland 0.56.2 only. Activity policy describes the current run, not necessarily all resumed history; boundaries have polling/delivery latency. Browser URLs are not resolved. Foot executable attribution requires opt-in and a provable PTY association; ambiguous cases are unknown. Window titles are app-provided text, not authoritative process attribution.</div>
-<footer>Generated locally. Embedded report controls only; no external scripts, fonts, analytics or network requests. This file contains application names and opt-in window titles and opt-in foreground executable names; treat it as private. Time values are rounded down to whole seconds. Claude and LibreWolf icons: selfh.st/icons, CC BY 4.0; embedded SVGs adapted for HTML.</footer>
+<footer><div class="footer-line"><span>Generated locally · Private report</span><span class="icon-credit">Icons by <a href="https://selfh.st/icons/" target="_blank" rel="noopener noreferrer">selfh.st</a><span aria-hidden="true"> · </span><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a><span class="credit-info"><button type="button" id="credit-toggle" aria-label="Icon attribution details" aria-describedby="credit-tooltip" aria-controls="credit-tooltip" aria-expanded="false">i</button><span class="credit-tooltip" id="credit-tooltip" role="tooltip">SVG markup adapted for inline HTML and accessibility; artwork unchanged. Full attribution is bundled with the project.</span></span></span></div><p class="footer-privacy">Embedded report controls only; no external scripts, fonts, analytics or automatic network requests. This file contains application names and opt-in window titles and opt-in foreground executable names; treat it as private. Time values are rounded down to whole seconds.</p></footer>
 </main><script>(() => {
   const tree = document.querySelector('.app-tree');
   const search = document.querySelector('#entry-search');
@@ -176,5 +188,19 @@ section{padding:16px}
     theme.setAttribute('aria-pressed', String(dark));
     theme.textContent = dark ? 'Light theme' : 'Dark theme';
   });
+  const info = document.querySelector('.credit-info');
+  const credit = document.querySelector('#credit-toggle');
+  const closeCredit = () => credit.setAttribute('aria-expanded', 'false');
+  credit.addEventListener('click', () => {
+    const opening = credit.getAttribute('aria-expanded') !== 'true';
+    if (opening) delete info.dataset.dismissed; else info.dataset.dismissed = 'true';
+    credit.setAttribute('aria-expanded', String(opening));
+  });
+  for (const event of ['pointerenter', 'focusin']) info.addEventListener(event, () => { delete info.dataset.dismissed; });
+  info.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { closeCredit(); info.dataset.dismissed = 'true'; }
+  });
+  document.addEventListener('click', event => { if (!info.contains(event.target)) closeCredit(); });
+  info.addEventListener('focusout', event => { if (!info.contains(event.relatedTarget)) closeCredit(); });
   document.querySelector('.tree-tools').hidden = false;
 })();</script></body></html>

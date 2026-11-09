@@ -72,7 +72,7 @@ test('offline export preserves saved totals, checkpoint bytes/metadata and direc
   assert.match(text, /No time after this snapshot was added/)
   assert.match(text, /00:00:06/)
   assert.match(text, /00:00:05/)
-  assert.doesNotMatch(text, /<iframe|<link|https?:\/\//i)
+  assert.doesNotMatch(text.replaceAll('https://selfh.st/icons/', '').replaceAll('https://creativecommons.org/licenses/by/4.0/', ''), /<iframe|<link|https?:\/\//i)
   assert.deepEqual([...text.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]), [require('./report-tree.cjs').script])
   assert.equal(readCheckpoint(state).elapsedMs, 6000)
   assert.equal(readCheckpoint(state).trackedMs, 5000)

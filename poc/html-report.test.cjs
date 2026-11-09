@@ -20,7 +20,7 @@ test('HTML has offline charts, totals and only hash-authorized local controls', 
   assert.match(html, /62.5%/)
   assert.match(html, /Title collection was off/)
   assert.match(html, /Content-Security-Policy/)
-  assert.doesNotMatch(html, /<link|<iframe|https?:\/\//i)
+  assert.doesNotMatch(html.replaceAll('https://selfh.st/icons/', '').replaceAll('https://creativecommons.org/licenses/by/4.0/', ''), /<link|<iframe|https?:\/\//i)
   const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
   assert.equal(scripts.length, 1)
   const hash = require('node:crypto').createHash('sha256').update(scripts[0][1]).digest('base64')

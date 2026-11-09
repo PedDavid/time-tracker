@@ -67,8 +67,41 @@ test('offline report controls work under CSP, on mobile and without scripts', { 
     assert.equal(await page.locator('[data-app]').first().getAttribute('open'), null)
     await page.setViewportSize({ width: 390, height: 844 })
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    const tooltip = page.locator('#credit-tooltip');
+    const credit = page.getByRole('button', { name: 'Icon attribution details', exact: true });
+    assert.equal(await tooltip.isVisible(), false);
+    await page.locator('.credit-info').hover();
+    assert.ok(await tooltip.isVisible());
+    await credit.focus();
+    await page.keyboard.press('Escape');
+    assert.equal(await tooltip.isVisible(), false);
+    await credit.click();
+    assert.equal(await credit.getAttribute('aria-expanded'), 'true');
+    assert.ok(await tooltip.isVisible());
+    const tipBox = await tooltip.boundingBox();
+    assert.ok(tipBox.x >= 0 && tipBox.x + tipBox.width <= 390);
+    await credit.click();
+    assert.equal(await tooltip.isVisible(), false);
+    await page.locator('#entry-search').focus();
+    await credit.focus();
+    assert.ok(await tooltip.isVisible());
+    await page.locator('#entry-search').focus();
+    await page.mouse.move(0, 0);
+    assert.equal(await tooltip.isVisible(), false);
+    assert.equal(await page.locator('.icon-credit a').count(), 2);
+    assert.equal(await page.locator('.icon-credit a').nth(0).getAttribute('href'), 'https://selfh.st/icons/');
+    assert.equal(await page.locator('.icon-credit a').nth(1).getAttribute('href'), 'https://creativecommons.org/licenses/by/4.0/');
     assert.deepEqual(errors, [])
     assert.deepEqual(requests, [url])
+    const touchContext = await browser.newContext({ hasTouch: true, viewport: { width: 390, height: 844 } });
+    const touchPage = await touchContext.newPage();
+    await touchPage.goto(url);
+    const touchCredit = touchPage.getByRole('button', { name: 'Icon attribution details', exact: true });
+    await touchCredit.tap();
+    assert.ok(await touchPage.locator('#credit-tooltip').isVisible());
+    await touchCredit.tap();
+    assert.equal(await touchPage.locator('#credit-tooltip').isVisible(), false);
+    await touchContext.close();
     const context = await browser.newContext({ javaScriptEnabled: false })
     const fallback = await context.newPage()
     await fallback.goto(url)
