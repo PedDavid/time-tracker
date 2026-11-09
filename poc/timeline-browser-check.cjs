@@ -33,6 +33,12 @@ async function main() {
   assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(23, 23, 23)')
   assert.equal(await page.locator('#theme-toggle').innerText(), 'Light theme')
   assert.equal(await page.locator('.lane').count(),3)
+  const humanLane = page.locator('.lane').filter({ has: page.locator('.lane-label', { hasText: 'You' }) })
+  const focusBar = await humanLane.locator('.span[data-status="tracking"]').boundingBox()
+  const idleBar = await humanLane.locator('.span[data-status="idle"]').boundingBox()
+  assert.ok(focusBar.height <= 14, 'interval bars should be slim')
+  assert.ok(idleBar.y > focusBar.y + focusBar.height, 'excluded activity must occupy a different Y track')
+  assert.equal(await humanLane.locator('.subtrack-label').count(), 2)
   assert.equal(await page.locator('img').count(),0)
   await page.locator('.span[data-status="tracking"]').click()
   assert.match(await page.locator('#inspector').innerText(),/PRIVATE_DEMO_TITLE/)
@@ -63,7 +69,7 @@ async function main() {
   await page.screenshot({path:'/tmp/time-tracker-timeline-mobile.png',fullPage:true})
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false)
   assert.deepEqual(errors,[])
-  console.log('PASS browser: light/dark theme, keyboard toggle, theme retained through refresh, parallel lanes, safe text rendering, span details, filters, zoom, navigation, live mode, JSON download, mobile layout, no JS errors')
+  console.log('PASS browser: slim activity subtracks with distinct Y positions, light/dark theme, keyboard toggle, theme retained through refresh, parallel lanes, safe text rendering, span details, filters, zoom, navigation, live mode, JSON download, mobile layout, no JS errors')
  } finally { await browser?.close();await server.close();rmSync(directory,{recursive:true,force:true}) }
 }
 main().catch(e=>{console.error(e);process.exitCode=1})

@@ -52,20 +52,37 @@ function render(data) {
     const first = spans[0], lane = element('div', undefined, 'lane')
     const label = element('div', undefined, 'lane-label')
     label.append(element('span', first.agent === 'human' ? 'You' : first.agent), element('small', `session ${first.session.slice(0, 8)}`))
-    const track = element('div', undefined, 'track')
+    const tracks = new Map()
     for (const span of spans) {
-      const name = span.app || span.status
-      const button = element('button', name, 'span')
-      button.style.left = `${100 * (span.start - data.from) / (data.to - data.from)}%`
-      button.style.width = `${100 * (span.end - span.start) / (data.to - data.from)}%`
-      button.dataset.status = span.status; button.dataset.id = span.id
-      button.setAttribute('aria-label', `${first.agent === 'human' ? 'You' : first.agent}: ${name}, ${formatDuration(span.end - span.start)}, ${formatDate(span.start)}`)
-      button.setAttribute('aria-pressed', String(span.id === state.selected))
-      button.title = `${name} · ${formatDuration(span.end - span.start)}`
-      button.onclick = () => inspect(span)
-      track.append(button)
+      const name = span.agent === 'human' && span.status === 'tracking' ? span.app : span.status
+      const key = JSON.stringify([span.status, name])
+      if (!tracks.has(key)) tracks.set(key, { name, status: span.status, spans: [] })
+      tracks.get(key).spans.push(span)
     }
-    lane.append(label, track); timeline.append(lane)
+    lane.append(label)
+    const order = ['tracking', 'working', 'waiting', 'paused', 'idle', 'locked', 'no focus', 'IPC unavailable', 'activity-unavailable', 'unknown']
+    const rows = [...tracks.values()].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status) || a.name.localeCompare(b.name))
+    for (const row of rows) {
+      const subtrack = element('div', undefined, 'subtrack')
+      const trackLabel = element('div', row.name, 'subtrack-label')
+      trackLabel.title = row.name
+      const track = element('div', undefined, 'track')
+      for (const span of row.spans) {
+        const name = span.app || span.status
+        const button = element('button', undefined, 'span')
+        button.style.left = `${100 * (span.start - data.from) / (data.to - data.from)}%`
+        button.style.width = `${100 * (span.end - span.start) / (data.to - data.from)}%`
+        button.dataset.status = span.status; button.dataset.id = span.id
+        button.setAttribute('aria-label', `${first.agent === 'human' ? 'You' : first.agent}: ${name}, ${formatDuration(span.end - span.start)}, ${formatDate(span.start)}`)
+        button.setAttribute('aria-pressed', String(span.id === state.selected))
+        button.title = `${name} · ${formatDuration(span.end - span.start)}`
+        button.onclick = () => inspect(span)
+        track.append(button)
+      }
+      subtrack.append(trackLabel, track)
+      lane.append(subtrack)
+    }
+    timeline.append(lane)
   }
   inspect(data.spans.find(s => s.id === state.selected) || null)
 }

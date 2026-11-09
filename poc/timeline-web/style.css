@@ -58,13 +58,13 @@ select { min-width: 140px; }
 .custom { margin: 14px 0; color: var(--muted); font-size: 12px; }
 .custom summary { cursor: pointer; }
 #dates { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; padding-top: 12px; }
-.metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 22px 0 24px; }
-.metrics article { border: 1px solid var(--line); border-radius: 8px; padding: 16px 20px; background: var(--panel); display: flex; flex-direction: column; }
+.metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 16px 0; }
+.metrics article { border: 1px solid var(--line); border-radius: 8px; padding: 10px 16px; background: var(--panel); display: flex; flex-direction: column; }
 .metrics span { color: var(--muted); font-size: 12px; }
-.metrics strong { font-size: 25px; letter-spacing: -.04em; font-weight: 600; margin: 8px 0; font-variant-numeric: tabular-nums; }
+.metrics strong { font-size: 21px; letter-spacing: -.04em; font-weight: 600; margin: 8px 0; font-variant-numeric: tabular-nums; }
 small { color: var(--muted); font-size: 11px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
-.panel-heading { padding: 22px; display: flex; justify-content: space-between; gap: 20px; align-items: center; border-bottom: 1px solid var(--line); }
+.panel-heading { padding: 14px 16px; display: flex; justify-content: space-between; gap: 20px; align-items: center; border-bottom: 1px solid var(--line); }
 .panel-heading p { font-size: 12px; margin-top: 5px; }
 .legend { display: flex; flex-wrap: wrap; gap: 15px; font-size: 11px; color: var(--muted); }
 .legend span:before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--unknown); border-radius: 2px; margin-right: 6px; }
@@ -74,14 +74,16 @@ small { color: var(--muted); font-size: 11px; }
 #notice { font-size: 12px; color: var(--text); padding: 0 22px; }
 #notice:not(:empty) { padding: 12px 22px; border-left: 3px solid var(--accent); }
 #timeline { overflow-x: auto; padding-bottom: 16px; }
-.axis,.lane { display: grid; grid-template-columns: 190px minmax(500px,1fr); min-width: 720px; }
+.axis,.subtrack { display: grid; grid-template-columns: 190px minmax(500px,1fr); min-width: 720px; }
 .axis { height: 38px; color: var(--muted); background: var(--soft); font-size: 10px; }
 .ticks { display: flex; justify-content: space-between; padding-top: 10px; padding-right: 10px; }
-.lane { border-top: 1px solid var(--line); min-height: 68px; }
-.lane-label { padding: 13px 20px; display: flex; flex-direction: column; border-right: 1px solid var(--line); font-size: 13px; }
-.lane-label small { font-family: ui-monospace,monospace; }
-.track { position: relative; margin: 17px 10px 17px 0; min-height: 32px; background: repeating-linear-gradient(to right,transparent 0,transparent calc(25% - 1px),var(--line) calc(25% - 1px),var(--line) 25%); }
-.span { position: absolute; top: 0; height: 32px; min-width: 2px; border: 0; border-radius: 3px; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-size: 11px; color: var(--span-text); background: var(--unknown); }
+.lane { border-top: 1px solid var(--line); min-width: 720px; padding-bottom: 6px; }
+.lane-label { padding: 5px 12px 3px; display: flex; align-items: baseline; gap: 8px; font-size: 12px; font-weight: 600; }
+.subtrack { height: 22px; }
+.subtrack-label { position: sticky; left: 0; z-index: 3; padding: 2px 12px 2px 24px; border-right: 1px solid var(--line); color: var(--muted); background: var(--panel); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lane-label small { font-family: ui-monospace,monospace; font-size: 10px; font-weight: 400; }
+.track { position: relative; margin: 0 10px 0 0; min-height: 22px; background: repeating-linear-gradient(to right,transparent 0,transparent calc(25% - 1px),var(--line) calc(25% - 1px),var(--line) 25%); }
+.span { position: absolute; top: 5px; height: 12px; min-width: 2px; border: 0; border-radius: 2px; padding: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-size: 11px; color: var(--span-text); background: var(--unknown); }
 .span[data-status=working] { background: var(--working); }
 .span[data-status=tracking] { background: var(--human); }
 .span[data-status=waiting] { background: var(--waiting); }
