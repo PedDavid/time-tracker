@@ -9,14 +9,17 @@ Solidtime and not an integration with a hosted time-tracking service.
 
 - Application-level foreground-time totals with manual pause/resume.
 - Optional window-title breakdown (often reflects the active browser tab).
+- Opt-in foot foreground-job executable tracking with explicit unknown fallbacks.
+- Pi/Claude title-derived session labels when both foot and title tracking are on.
 - Private atomic checkpoints every five seconds, with automatic recovery.
 - Self-contained HTML reports with charts and excluded-time breakdowns.
 - Synthetic tests covering accounting, title privacy, export and forced-kill
   recovery.
 
 **Important:** this measures foreground-window time, not verified active work.
-Automatic idle/lock detection, browser URLs and terminal foreground-command
-attribution are **not implemented**. Pause before leaving or locking.
+Automatic idle/lock detection and browser URLs are **not implemented**. Foot
+foreground-job attribution is opt-in and best-effort; shared-server windows and
+ambiguous jobs return unknown. Pause before leaving or locking.
 
 ## Set up on another computer
 
@@ -78,6 +81,10 @@ node poc/tracker.cjs --titles --html ./report.html
 # Automatically stop and export after one minute.
 node poc/tracker.cjs --titles --duration 60 --html ./minute-report.html
 
+# Opt in to foot's foreground executable, in a separate session history.
+# A fresh state path is required when changing title/foot collection settings.
+node poc/tracker.cjs --foot --titles --state ./state/foot.json --html ./foot-report.html
+
 # A separate session history, with checkpoints every two seconds.
 node poc/tracker.cjs --titles --state ./state/work.json --flush 2
 
@@ -92,10 +99,10 @@ Ctrl+C also stops cleanly.
 
 Default checkpoint: `$XDG_STATE_HOME/focus-tracker/session.json`, falling back
 to `~/.local/state/focus-tracker/session.json`. It contains totals, excluded time,
-metadata and any explicitly opted-in titles. It is owner-readable/writable only.
+metadata, explicitly opted-in titles and foot executable summaries. It is owner-readable/writable only.
 The same command resumes saved totals; downtime is not counted. Use a new
-`--state` path for a separate history. Title collection must use the same
-`--titles` setting when resuming a checkpoint.
+`--state` path for a separate history. Collection must use the same
+`--titles` and `--foot` settings when resuming a checkpoint.
 
 A sudden crash normally loses approximately the last checkpoint interval,
 plus scheduling/I/O delay. Storage failures can prevent saving; warnings go to
@@ -110,7 +117,11 @@ without the usual extensions might not match ignore rules: always inspect
 staged changes before publishing. Never commit personal activity history.
 
 See [the detailed PoC guide](poc/README.md) for accounting semantics, recovery,
-privacy, title limitations and manual acceptance checks.
+privacy, title limitations and manual acceptance checks. The
+[foot association/design notes](poc/docs/foot-tracking.md) explain PTY proof,
+process-group selection, polling, privacy and known limitations.
+[Agent session labels](poc/docs/agent-session-labels.md) explain naming pi/Claude
+sessions and the distinction between an observed title and verified session identity.
 
 ## Test
 
@@ -125,8 +136,9 @@ node x-win/examples/hyprland-subscription-test.cjs x-win/target/debug/x-win.node
 node x-win/examples/hyprland-smoke.cjs x-win/target/debug/x-win.node
 ```
 
-Twenty PoC tests passed locally, including SIGKILL/restart recovery, concurrent
-writer rejection, title opt-in boundaries, and HTML injection/overwrite checks.
+Forty-two PoC tests passed locally, including SIGKILL/restart recovery,
+concurrent writer rejection, title opt-in boundaries, HTML injection/overwrite
+checks, and synthetic foot PTY/foreground-group attribution.
 Live checkpoint save/resume was also tested on Hyprland with zero IPC errors.
 
 ## Layout

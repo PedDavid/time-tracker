@@ -13,10 +13,23 @@ writeHtml(path, {
   excluded: [['paused', 10 * minute], ['no focus', 4 * minute], ['IPC unavailable', minute]],
   titlesEnabled: true,
   details: [
-    { app: 'foot', title: 'foot (synthetic window title, not an inner process)', ms: 20 * minute },
+    { app: 'foot', title: 'π - Synthetic tracker task', ms: 8 * minute },
+    { app: 'foot', title: 'Claude — Synthetic infra task', ms: 6 * minute },
+    { app: 'foot', title: 'foot (synthetic window title)', ms: 6 * minute },
     { app: 'librewolf', title: 'Hyprland documentation — LibreWolf', ms: 18 * minute },
     { app: 'librewolf', title: 'Synthetic issue tracker — LibreWolf', ms: 12 * minute },
     { app: 'fixture.Editor', title: 'report.cjs — Example project', ms: 10 * minute },
+  ],
+  footEnabled: true,
+  terminals: [
+    { app: 'foot', executable: 'pi', reason: null, ms: 8 * minute },
+    { app: 'foot', executable: 'claude', reason: null, ms: 6 * minute },
+    { app: 'foot', executable: 'nvim', reason: null, ms: 4 * minute },
+    { app: 'foot', executable: null, reason: 'multiple-foreground-roots', ms: 2 * minute },
+  ],
+  agentLabels: [
+    { app: 'foot', executable: 'pi', label: 'π - Synthetic tracker task', source: 'window-title', ms: 8 * minute },
+    { app: 'foot', executable: 'claude', label: 'Claude — Synthetic infra task', source: 'window-title', ms: 6 * minute },
   ],
   errors: 1,
 })

@@ -5,7 +5,8 @@ const { resolve, join } = require('node:path')
 const { homedir } = require('node:os')
 const { performance } = require('node:perf_hooks')
 const readline = require('node:readline')
-const { Accounting, appLabel, windowTitle } = require('./accounting.cjs')
+const { Accounting } = require('./accounting.cjs')
+const { FootObserver } = require('./foot-observer.cjs')
 const { writeHtml } = require('./html-report.cjs')
 const { Checkpoint } = require('./checkpoint.cjs')
 
@@ -18,6 +19,8 @@ function options(args) {
     json: false,
     html: null,
     titles: false,
+    foot: false,
+    'foot-interval': 1000,
     state: join(process.env.XDG_STATE_HOME || join(homedir(), '.local/state'), 'focus-tracker', 'session.json'),
     flush: 5,
   }
@@ -33,6 +36,8 @@ Usage: node poc/tracker.cjs [options]
   --json                Print only a final JSON summary
   --html PATH           Save a private standalone HTML report on exit (new file only)
   --titles              Opt in to window-title collection (may contain private data)
+  --foot                Opt in to local foreground-executable tracking for foot
+  --foot-interval MS    Foot context refresh, 500–60000 (default 1000)
   --state PATH          Checkpoint path; resume saved totals automatically
   --flush SECONDS       Checkpoint interval, 0.1–3600 (default 5)
   --no-state            Ephemeral session; disable checkpoint/recovery
@@ -41,8 +46,9 @@ Interactive: p = pause/resume, r = report, q = quit. Lock/idle are NOT detected.
     }
     if (flag === '--json') { result.json = true; continue }
     if (flag === '--titles') { result.titles = true; continue }
+    if (flag === '--foot') { result.foot = true; continue }
     if (flag === '--no-state') { result.noState = true; continue }
-    if (!['--native', '--html', '--state', '--flush', '--duration', '--interval', '--refresh'].includes(flag)) throw new Error(`Unknown option: ${flag}`)
+    if (!['--native', '--html', '--state', '--flush', '--duration', '--interval', '--refresh', '--foot-interval'].includes(flag)) throw new Error(`Unknown option: ${flag}`)
     const value = args[++i]
     if (!value || value.startsWith('--')) throw new Error(`Missing value for ${flag}`)
     if (flag === '--native' || flag === '--html' || flag === '--state') {
@@ -57,6 +63,7 @@ Interactive: p = pause/resume, r = report, q = quit. Lock/idle are NOT detected.
   if (!Number.isInteger(result.interval) || result.interval < 50 || result.interval > 60000) {
     throw new Error('--interval must be an integer between 50 and 60000 ms')
   }
+  if (!Number.isInteger(result['foot-interval']) || result['foot-interval'] < 500 || result['foot-interval'] > 60000) throw new Error('--foot-interval must be an integer between 500 and 60000 ms')
   if (result.refresh < 0.1) throw new Error('--refresh must be at least 0.1 seconds')
   if (result.flush < 0.1 || result.flush > 3600) throw new Error('--flush must be between 0.1 and 3600 seconds')
   if (result.noState && result.customState) throw new Error('Use --state or --no-state, not both')
@@ -78,7 +85,7 @@ function main() {
     throw new Error('Cannot load native addon. Build the fork and copy its .so to target/debug/x-win.node; see poc/README.md.')
   }
   const clock = () => performance.now()
-  const store = config.state ? new Checkpoint(config.state, config.titles) : null
+  const store = config.state ? new Checkpoint(config.state, config.titles, config.foot) : null
   const ledger = new Accounting(clock(), store?.record?.snapshot)
   const startedAt = store?.record?.startedAt || new Date().toISOString()
   let running = true
@@ -88,12 +95,16 @@ function main() {
   let refreshTimer
   let stopTimer
   let flushTimer
+  let footTimer
+  let footSoon
+  const observer = new FootObserver({ native, ledger, clock, titles: config.titles, enabled: config.foot })
+  const pollFoot = () => { if (running && !observer.poll()) errors++ }
   const interactive = process.stdin.isTTY && !config.json
   const wasRaw = process.stdin.isRaw
 
   function snapshot() {
     return {
-      ...ledger.snapshot(clock()), errors, startedAt, titlesEnabled: config.titles,
+      ...ledger.snapshot(clock()), errors, startedAt, titlesEnabled: config.titles, footEnabled: config.foot,
       measurement: 'foreground-window time, not verified active work',
       idleDetection: false, lockDetection: false, persisted: checkpointFresh,
       checkpointEnabled: Boolean(store),
@@ -103,9 +114,9 @@ function main() {
   function flush(summary = snapshot()) {
     if (!store) return false
     try {
-      const { elapsedMs, trackedMs, apps, excluded, details, state } = summary
-      store.save({ version: 1, startedAt, savedAt: new Date().toISOString(), titlesEnabled: config.titles, errors,
-        snapshot: { elapsedMs, trackedMs, apps, excluded, details, state } })
+      const { elapsedMs, trackedMs, apps, excluded, details, terminals, agentLabels, state } = summary
+      store.save({ version: config.foot ? (config.titles ? 3 : 2) : 1, startedAt, savedAt: new Date().toISOString(), titlesEnabled: config.titles, footEnabled: config.foot, errors,
+        snapshot: { elapsedMs, trackedMs, apps, excluded, details, terminals, agentLabels, state } })
       checkpointFresh = true
       return true
     } catch (error) {
@@ -143,6 +154,14 @@ function main() {
     for (const [app, ms] of summary.apps) {
       console.log(app.slice(0, 40).padEnd(42) + duration(ms).padEnd(12) + `${(ms / summary.trackedMs * 100).toFixed(1)}%`)
     }
+    if (config.foot) {
+      console.log('\nfoot foreground executables (separate from application totals):')
+      for (const row of summary.terminals) console.log(`${row.executable || `unknown (${row.reason})`}`.padEnd(42) + duration(row.ms))
+      if (config.titles && summary.agentLabels.length) {
+        console.log('\nAgent session labels (window-title derived, not verified IDs):')
+        for (const row of summary.agentLabels) console.log(`${row.executable} — ${row.label}`.padEnd(64) + `  ${duration(row.ms)}`)
+      }
+    }
     console.log(`Tracked: ${duration(summary.trackedMs)} | IPC outages: ${errors}`)
     if (summary.excluded.length) console.log(`Excluded: ${summary.excluded.map(([kind, ms]) => `${kind} ${duration(ms)}`).join(', ')}`)
     console.log('p pause/resume · r report · q quit · No idle/lock detection; pause before leaving/locking.')
@@ -154,6 +173,8 @@ function main() {
     clearInterval(refreshTimer)
     clearTimeout(stopTimer)
     clearInterval(flushTimer)
+    clearInterval(footTimer)
+    clearTimeout(footSoon)
     if (subscription !== undefined) {
       try { native.unsubscribeActiveWindow(subscription) } catch { process.exitCode = 1 }
     }
@@ -167,7 +188,7 @@ function main() {
 
   function keypress(text, key) {
     if ((key?.ctrl && key.name === 'c') || text === 'q') { stop(); return }
-    if (text === 'p') { ledger.togglePause(clock()); flush(); report() }
+    if (text === 'p') { ledger.togglePause(clock()); if (config.foot) pollFoot(); flush(); report() }
     if (text === 'r') report()
   }
 
@@ -186,23 +207,28 @@ function main() {
     console.log(`Local-only PoC: ${config.titles ? 'window-title collection ON (private data)' : 'window-title collection off'}; paths and command arguments are not retained.`)
     console.log(store ? `Private checkpoints every ${config.flush}s: ${config.state}${store.record ? ' (resuming saved totals)' : ''}` : 'Checkpointing disabled: session is in memory only.')
     if (config.html) console.log('HTML export enabled: a new report file will be saved on exit.')
+    if (config.foot) console.log(`foot foreground tracking ON: proc metadata refresh every ${config['foot-interval']}ms; ambiguous associations report unknown.`)
     console.log('Counts foreground-window time, not verified active work. No automatic idle/lock detection.')
   }
   // Snapshot avoids attributing startup/load time to the first observed app.
   try {
     const window = native.activeWindow()
-    ledger.observe(appLabel(window), clock(), windowTitle(window, config.titles))
-  } catch { errors++; ledger.unavailable(clock()) }
+    observer.observe(window)
+    if (config.foot) pollFoot()
+  } catch { errors++; observer.fail() }
   try {
     subscription = native.subscribeActiveWindow((error, window) => {
       if (!running) return // Native callbacks already queued can arrive after unsubscribe.
-      if (error) { errors++; ledger.unavailable(clock()); return }
-      ledger.observe(appLabel(window), clock(), windowTitle(window, config.titles))
+      if (error) { errors++; observer.fail(); return }
+      if (observer.observe(window) && config.foot && !footSoon) {
+        footSoon = setTimeout(() => { footSoon = null; pollFoot() }, 0)
+      }
     }, config.interval)
   } catch {
     stop()
     throw new Error('Could not start the native subscription')
   }
+  if (config.foot) footTimer = setInterval(pollFoot, config['foot-interval'])
   if (store) { flush(); flushTimer = setInterval(flush, config.flush * 1000) }
   if (!config.json) { report(); refreshTimer = setInterval(report, config.refresh * 1000) }
   if (config.duration !== null) stopTimer = setTimeout(stop, config.duration * 1000)

@@ -8,12 +8,18 @@ const { spawnSync } = require('node:child_process')
 const MAX_BYTES = 16 * 1024 * 1024
 const finite = (value) => Number.isFinite(value) && value >= 0
 
-function validate(record, titlesEnabled) {
+function validate(record, titlesEnabled, footEnabled = false) {
   const fail = () => { throw new Error('Invalid checkpoint; preserved without overwriting. Choose another --state path or restore a backup.') }
-  if (!record || record.version !== 1 || typeof record.titlesEnabled !== 'boolean' ||
+  if (!record || ![1, 2, 3].includes(record.version) || typeof record.titlesEnabled !== 'boolean' ||
       !Number.isFinite(Date.parse(record.startedAt)) || !Number.isSafeInteger(record.errors) || record.errors < 0) fail()
   if (record.titlesEnabled !== titlesEnabled) {
     throw new Error('Checkpoint title policy differs. Use the same --titles setting or choose a new --state path; existing history is preserved.')
+  }
+  if (record.footEnabled !== undefined && typeof record.footEnabled !== 'boolean') fail()
+  if ((record.version >= 2) !== Boolean(record.footEnabled)) fail()
+  if (record.version === 3 && !record.titlesEnabled) fail()
+  if (Boolean(record.footEnabled) !== footEnabled) {
+    throw new Error('Checkpoint foot policy differs. Use the same --foot setting or choose a new --state path; existing history is preserved.')
   }
   const s = record.snapshot
   if (!s || !finite(s.elapsedMs) || !finite(s.trackedMs) || !Array.isArray(s.details) ||
@@ -45,6 +51,43 @@ function validate(record, titlesEnabled) {
   }
   if (!titlesEnabled && s.details.length) fail()
   for (const [app, total] of detailTotals) if (!finite(total) || total > apps.get(app) + 1) fail()
+  const terminals = s.terminals === undefined ? [] : s.terminals
+  if (!Array.isArray(terminals) || (!footEnabled && terminals.length)) fail()
+  const terminalTotals = new Map()
+  const terminalKeys = new Set()
+  const executableTotals = new Map()
+  for (const row of terminals) {
+    if (!row || !apps.has(row.app) || !finite(row.ms)) fail()
+    const resolved = typeof row.executable === 'string' && row.executable.length > 0 && row.executable.length <= 80 && !/[\p{C}\p{Zl}\p{Zp}]/u.test(row.executable) && row.reason === null
+    const unknown = row.executable === null && typeof row.reason === 'string' && /^[a-z0-9-]{1,80}$/.test(row.reason)
+    if (!resolved && !unknown) fail()
+    const key = JSON.stringify([row.app, row.executable, row.reason])
+    if (terminalKeys.has(key)) fail()
+    terminalKeys.add(key)
+    terminalTotals.set(row.app, (terminalTotals.get(row.app) || 0) + row.ms)
+    if (resolved) {
+      const key = JSON.stringify([row.app, row.executable])
+      executableTotals.set(key, (executableTotals.get(key) || 0) + row.ms)
+    }
+  }
+  for (const [app, total] of terminalTotals) if (!finite(total) || total > apps.get(app) + 1) fail()
+  const labels = s.agentLabels === undefined ? [] : s.agentLabels
+  if (!Array.isArray(labels) || (labels.length && (!titlesEnabled || !footEnabled || record.version < 3))) fail()
+  const labelKeys = new Set()
+  const perExecutable = new Map()
+  const perTitle = new Map()
+  const titleTimes = new Map(s.details.map((row) => [JSON.stringify([row.app, row.title]), row.ms]))
+  for (const row of labels) {
+    if (!row || !apps.has(row.app) || !['pi', 'claude'].includes(row.executable) || row.source !== 'window-title' ||
+        typeof row.label !== 'string' || !row.label || row.label.length > 240 || /[\p{C}\p{Zl}\p{Zp}]/u.test(row.label) || !finite(row.ms)) fail()
+    const key = JSON.stringify([row.app, row.executable, row.label])
+    if (labelKeys.has(key)) fail()
+    labelKeys.add(key)
+    for (const [map, key] of [[perExecutable, JSON.stringify([row.app, row.executable])], [perTitle, JSON.stringify([row.app, row.label])]]) map.set(key, (map.get(key) || 0) + row.ms)
+  }
+  for (const [map, totals] of [[perExecutable, executableTotals], [perTitle, titleTimes]]) {
+    for (const [key, total] of map) if (!finite(total) || !totals.has(key) || total > totals.get(key) + 1) fail()
+  }
   return record
 }
 
@@ -56,9 +99,10 @@ function ownedFile(fd) {
 }
 
 class Checkpoint {
-  constructor(path, titlesEnabled) {
+  constructor(path, titlesEnabled, footEnabled = false) {
     this.path = path
     this.titlesEnabled = titlesEnabled
+    this.footEnabled = footEnabled
     this.fd = null
     fs.mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
     try {
@@ -84,7 +128,7 @@ class Checkpoint {
       fd = fs.openSync(this.path, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW)
       const stat = ownedFile(fd)
       if (stat.size > MAX_BYTES) throw new Error('Checkpoint is too large; preserved without overwriting')
-      return validate(JSON.parse(fs.readFileSync(fd, 'utf8')), this.titlesEnabled)
+      return validate(JSON.parse(fs.readFileSync(fd, 'utf8')), this.titlesEnabled, this.footEnabled)
     } catch (error) {
       if (error.code === 'ENOENT') return null
       if (error instanceof SyntaxError) throw new Error('Checkpoint contains malformed JSON; preserved without overwriting')
@@ -94,7 +138,7 @@ class Checkpoint {
 
   save(record) {
     if (this.fd === null) throw new Error('Checkpoint is closed')
-    validate(record, this.titlesEnabled)
+    validate(record, this.titlesEnabled, this.footEnabled)
     const content = JSON.stringify(record) + '\n'
     if (Buffer.byteLength(content) > MAX_BYTES) throw new Error('Checkpoint exceeds 16 MiB; previous checkpoint preserved')
     const temporary = join(dirname(this.path), `.${basename(this.path)}.${randomUUID()}.tmp`)
