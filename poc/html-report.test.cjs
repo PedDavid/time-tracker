@@ -13,14 +13,18 @@ const summary = {
   excluded: [['paused', 2000]], errors: 0,
 }
 
-test('HTML has offline charts, totals and no active or external resources', () => {
+test('HTML has offline charts, totals and only hash-authorized local controls', () => {
   const html = renderHtml(summary)
   assert.match(html, /conic-gradient/)
   assert.match(html, /00:00:08/)
   assert.match(html, /62.5%/)
   assert.match(html, /Title collection was off/)
   assert.match(html, /Content-Security-Policy/)
-  assert.doesNotMatch(html, /<script|<link|<iframe|https?:\/\//i)
+  assert.doesNotMatch(html.replaceAll('https://selfh.st/icons/', '').replaceAll('https://creativecommons.org/licenses/by/4.0/', ''), /<link|<iframe|https?:\/\//i)
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+  assert.equal(scripts.length, 1)
+  const hash = require('node:crypto').createHash('sha256').update(scripts[0][1]).digest('base64')
+  assert.ok(html.includes("script-src 'sha256-" + hash + "'"))
 })
 
 test('untrusted titles, classes and excluded labels are HTML-escaped', () => {
@@ -29,7 +33,7 @@ test('untrusted titles, classes and excluded labels are HTML-escaped', () => {
     apps: [[attack, 8000]], excluded: [[attack, 2000]],
     details: [{ app: attack, title: attack, ms: 8000 }],
   })
-  assert.doesNotMatch(html, /<script>/)
+  assert.doesNotMatch(html, /<script>alert/)
   assert.match(html, /&lt;script&gt;/)
   assert.match(html, /&amp;/)
 })

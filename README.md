@@ -14,7 +14,8 @@ Solidtime and not an integration with a hosted time-tracking service.
 - Opt-in foot foreground-job executable tracking with explicit unknown fallbacks.
 - Pi/Claude title-derived session labels when both foot and title tracking are on.
 - Private atomic checkpoints every five seconds, with automatic recovery.
-- Self-contained HTML reports with charts and excluded-time breakdowns.
+- Self-contained HTML reports with an expandable application tree, search,
+  light/dark themes, charts and excluded-time breakdowns.
 - Read-only HTML export from the latest checkpoint while tracking continues.
 - Synthetic tests covering accounting, title privacy, export and forced-kill
   recovery.
@@ -162,6 +163,27 @@ export command can create one during tracking. Neither claims a pre-existing
 file; watch mode can only replace its own newly created report. The included
 [example report](poc/example-report.html) contains
 **synthetic data only**. Download/open it locally to preview the design.
+Reports use a compact neutral theme shared with Clavium and Dominium. Expand an
+application to inspect its observed window titles and, when enabled, foreground
+executables. Pi/Claude executables can expand into correlated title-derived
+labels. Search filters applications and details; **Expand all** and **Collapse
+all** control the hierarchy. Clearing search restores the previous expansion.
+The theme button switches between light and dark for the current report view.
+Process rows use small selfh.st brand icons where available and neutral fallbacks
+otherwise; titles and session labels remain text-only. Icons are embedded in the
+report, with provenance and licensing in `poc/icons/README.md`. A compact footer
+links to selfh.st and CC BY 4.0; hover, focus or tap its information button for
+modification details. Credits travel with each report. Those links connect only
+when clicked.
+
+Application totals remain authoritative. Executable and title breakdowns overlap
+and must not be added together; agent labels may cover only part of executable
+time. Search does not change totals or percentages. These are observed labels,
+not inferred projects or verified session identities. Reports make no network
+requests and store no browser state. Native disclosure controls work with scripts
+disabled; search, theme and bulk controls use one embedded, CSP hash-authorized
+script. Optional details and charts are available in collapsible sections.
+
 Generated reports, checkpoints, and binaries are Git-ignored. Custom filenames
 without the usual extensions might not match ignore rules: always inspect
 staged changes before publishing. Never commit personal activity history.
@@ -186,7 +208,11 @@ node x-win/examples/hyprland-subscription-test.cjs x-win/target/debug/x-win.node
 node x-win/examples/hyprland-smoke.cjs x-win/target/debug/x-win.node
 ```
 
-All **81 PoC tests passed** locally. Optional compiled helper tests use a
+The PoC suite includes an optional browser check for the report tree. It runs
+when Playwright is available, using `/usr/bin/chromium` (override with
+`CHROMIUM_PATH`); no browser tooling is needed for the core tests.
+
+All **81 original PoC tests passed** on the original developer workstation. Optional compiled helper tests use a
 synthetic Wayland server and skip when development tools are unavailable.
 The suite covers SIGKILL/restart recovery, concurrent writer rejection,
 title opt-in boundaries, HTML injection/overwrite checks, synthetic foot

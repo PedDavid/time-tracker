@@ -119,5 +119,5 @@ test('HTML labels are escaped and explicitly identified as title-derived', () =>
   assert.match(html, /Agent session labels/)
   assert.match(html, /not verified session names or IDs/)
   assert.match(html, /&lt;script&gt;/)
-  assert.doesNotMatch(html, /<script>/)
+  assert.deepEqual([...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]), [require('./report-tree.cjs').script])
 })

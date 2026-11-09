@@ -1,12 +1,132 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-07OlQhGeDPUibvHnt6e6ALDiU3GZ3sF3nXsQbc9J+gs='; base-uri 'none'; form-action 'none'">
 <title>Focus time · Local session</title>
 <style>
-:root{color-scheme:dark;--bg:#101522;--panel:#192133;--line:#2b364c;--text:#ecf0fa;--muted:#a3afc5;--accent:#a6a1ff}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:56px 28px}header{display:flex;justify-content:space-between;gap:24px;align-items:center;margin-bottom:36px}.eyebrow{color:var(--accent);text-transform:uppercase;letter-spacing:.18em;font-size:11px;font-weight:700}h1{font-size:clamp(30px,5vw,48px);line-height:1.15;letter-spacing:-.04em;margin:10px 0}h2{font-size:19px;letter-spacing:-.02em;margin:0 0 20px}p{margin:8px 0}.muted,small{color:var(--muted)}.badge{border:1px solid var(--line);border-radius:30px;padding:8px 14px;font-size:12px;white-space:nowrap}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}.card,section{background:var(--panel);border:1px solid var(--line);border-radius:18px}.card{padding:22px}.card strong{display:block;font-size:27px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.card small{font-size:12px}section{padding:28px;margin-bottom:24px}.overview{display:grid;grid-template-columns:240px 1fr;gap:36px;align-items:center}.donut{width:204px;height:204px;border-radius:50%;display:grid;place-items:center;margin:12px auto;background:conic-gradient(#a6a1ff 0.0000% 50.0000%,#63d5c4 50.0000% 83.3333%,#f3bb77 83.3333% 100.0000%)}.donut-inner{background:var(--panel);width:152px;height:152px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column}.donut-inner strong{font-size:26px}.donut-inner small{font-size:11px}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left}th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}td,th{padding:13px 8px;border-bottom:1px solid var(--line)}tr:last-child td{border-bottom:0}.number{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.dot{width:9px;height:9px;display:inline-block;border-radius:3px;margin-right:10px}.bar-cell{width:25%}.bar{height:5px;border-radius:8px;background:var(--line);overflow:hidden}.bar span{display:block;height:100%;border-radius:8px}.title{min-width:220px;overflow-wrap:anywhere}.notice{border-left:3px solid var(--accent);padding:4px 0 4px 18px;font-size:13px;color:var(--muted)}footer{font-size:12px;color:var(--muted);margin-top:28px}.empty{color:var(--muted);padding:16px 0} @media(max-width:760px){main{padding:28px 16px}header{align-items:flex-start}.cards{grid-template-columns:repeat(2,1fr)}.overview{grid-template-columns:1fr;gap:16px}section{padding:20px}.bar-cell{display:none}.badge{white-space:normal}.card strong{font-size:23px}} @media print{body{background:#fff;color:#111;--text:#111;--muted:#555;--panel:#fff;--line:#ddd}main{padding:0}section,.card{break-inside:avoid}.donut{print-color-adjust:exact}.bar,.dot{print-color-adjust:exact}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+main{margin:auto}
+header{display:flex;justify-content:space-between;gap:24px;align-items:center}
+p{margin:8px 0}
+.muted,small{color:var(--muted)}
+.badge{border:1px solid var(--line);font-size:12px;white-space:nowrap}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);margin-bottom:24px}
+.card,section{background:var(--panel);border:1px solid var(--line)}
+.card strong{display:block;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.card small{font-size:12px}
+section{margin-bottom:24px}
+.overview{display:grid;align-items:center}
+.donut{border-radius:50%;display:grid;place-items:center;margin:12px auto;background:conic-gradient(#2563eb 0.0000% 50.0000%,#0d9488 50.0000% 83.3333%,#d97706 83.3333% 100.0000%)}
+.donut-inner{background:var(--panel);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.donut-inner small{font-size:11px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+td,th{padding:13px 8px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+.number{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.dot{width:9px;height:9px;display:inline-block;margin-right:10px}
+.bar-cell{width:25%}
+.bar{height:5px;background:var(--line);overflow:hidden}
+.bar span{display:block;height:100%}
+.title{min-width:220px;overflow-wrap:anywhere}
+.notice{border-left:3px solid var(--accent);padding:4px 0 4px 18px;font-size:13px;color:var(--muted)}
+footer{font-size:12px;color:var(--muted);margin-top:28px}
+.empty{color:var(--muted);padding:16px 0}
+pre{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:760px){header{align-items:flex-start}.cards{grid-template-columns:repeat(2,1fr)}.bar-cell{display:none}.badge{white-space:normal}}
+@media print{body{background:#fff;color:#111}main{padding:0}section,.card{break-inside:avoid}.donut,.bar,.dot{print-color-adjust:exact}}
+
+.footer-line{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--line);padding-top:16px;flex-wrap:wrap}
+.icon-credit{margin-left:auto;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.icon-credit a{color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.icon-credit a:hover{color:var(--text)}
+.credit-info{display:inline-flex;position:relative;padding:5px;margin:-5px}
+#credit-toggle{display:grid;place-items:center;width:24px;height:24px;padding:0;border:0;border-radius:50%;color:var(--muted);font:12px Georgia,serif;background:transparent}
+#credit-toggle:before{content:'';position:absolute;width:14px;height:14px;border:1px solid currentColor;border-radius:50%;pointer-events:none}
+.credit-tooltip{visibility:hidden;position:absolute;right:0;bottom:100%;width:270px;max-width:calc(100vw - 48px);padding:11px 13px;border-radius:6px;background:var(--text);color:var(--bg);white-space:normal;font-size:11px;line-height:1.6;box-shadow:0 3px 9px #0002;z-index:1}
+.credit-info:not([data-dismissed]):hover .credit-tooltip,.credit-info:not([data-dismissed]):focus-within .credit-tooltip,.credit-info:has([aria-expanded=true]) .credit-tooltip{visibility:visible}
+.footer-privacy{font-size:11px;line-height:1.6;margin-top:12px}
+@media print{.credit-tooltip{visibility:visible;position:static;box-shadow:none;padding:0;width:auto;max-width:none;background:transparent;color:inherit}.credit-info{display:block;padding:0;margin:0}#credit-toggle{display:none}.icon-credit{white-space:normal;flex-wrap:wrap}}
+
+:root{color-scheme:light;--bg:#fff;--panel:#fff;--line:#e5e5e5;--text:#171717;--muted:#737373;--accent:#2563eb;--soft:#f5f5f5}
+
+:root[data-theme=dark]{color-scheme:dark;--bg:#171717;--panel:#1c1c1c;--line:#363636;--text:#fafafa;--muted:#aaa;--accent:#60a5fa;--soft:#262626}
+
+body{font-size:14px;line-height:1.5}
+main{max-width:1152px;padding:28px 24px}
+header{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:24px;flex-wrap:wrap}
+h1{font-size:28px;letter-spacing:-.035em;margin:8px 0}
+h2{font-size:17px;margin-bottom:16px}
+.eyebrow{color:var(--text);letter-spacing:0;text-transform:none;font-size:14px}
+.badge{border-radius:6px;background:var(--soft);padding:5px 9px}
+.cards{gap:12px}
+.card,section{border-radius:8px}
+.card{padding:16px 20px}
+.card strong{font-size:25px}
+section{padding:22px}
+.overview{grid-template-columns:180px 1fr;gap:24px}
+.donut{width:156px;height:156px}
+.donut-inner{width:122px;height:122px}
+.donut-inner strong{font-size:23px}
+.bar,.bar span{border-radius:3px}
+.dot{border-radius:2px}
+button,input{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px}
+button{cursor:pointer;white-space:nowrap}
+button:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.tree-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:18px 0}
+.tree-tools input{flex:1;min-width:180px}
+.tree-tools small{width:100%}
+[hidden]{display:none!important}
+.tree-head,.tree-row{display:grid;grid-template-columns:minmax(0,1fr) 100px 70px 110px;gap:14px;align-items:center;padding:12px 14px}
+.tree-head{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;background:var(--soft)}
+.app-tree{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.app-tree>details+details{border-top:1px solid var(--line)}
+summary.tree-row{cursor:pointer;list-style:none;font-weight:600}
+summary::-webkit-details-marker{display:none}
+summary.tree-row:hover{background:var(--soft)}
+.process-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-right:8px;vertical-align:-3px;color:var(--muted)}
+.process-icon svg{display:block;width:16px;height:16px;flex-shrink:0}
+.process-pi{font:19px/16px Georgia,serif}
+.tree-name{min-width:0;overflow-wrap:anywhere}
+.chevron{display:inline-block;width:20px;color:var(--muted)}
+.chevron:before{content:'›'}
+details[open]>summary .chevron:before{content:'⌄'}
+.tree-children{margin:0 14px 12px 24px;border-left:1px solid var(--line)}
+.tree-children .tree-row{padding-left:18px;font-size:13px}
+.tree-section{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:14px 18px 4px}
+.tree-row .bar{width:100%;background:var(--soft)}
+.tree-row .bar span{background:var(--accent)}
+.tree-note{margin:12px 0 0;font-size:12px;color:var(--muted)}
+.tree-empty{padding:14px;color:var(--muted)}
+.supporting>summary{cursor:pointer;font-size:16px;font-weight:600}
+.supporting[open]>summary{margin-bottom:18px}
+.supporting{margin:0}
+.tree-row small{font-weight:400;font-size:11px;color:var(--muted)}
+
+@media(max-width:760px){main{padding:20px 14px}
+.overview{grid-template-columns:1fr}
+.tree-head,.tree-row{grid-template-columns:minmax(0,1fr) 78px 48px;gap:8px;padding:12px 10px}
+.tree-row .bar,.tree-head>:last-child{display:none}
+.tree-children{margin-left:14px;margin-right:6px}
+.tree-tools button{flex:1}
+section{padding:16px}
+.card{padding:14px}
+.card strong{font-size:21px}
+}
+
+@media print{.tree-tools{display:none!important}
+:root{--bg:#fff;--panel:#fff;--text:#111;--muted:#555;--line:#ddd;--soft:#f5f5f5}
+.app-tree{overflow:visible}
+.tree-row{break-inside:avoid}
+}
+
+
 </style></head><body><main>
-<header><div><div class="eyebrow">Focus journal / local PoC</div><h1>A little clarity<br>on your time.</h1><p class="muted">1 Jan 2026, 09:00 · Foreground-window summary</p></div><span class="badge">Synthetic demo · Offline report · No external assets</span></header>
+<header><div><div class="eyebrow">◷ time-tracker</div><h1>Your time, at a glance.</h1><p class="muted">1 Jan 2026, 09:00 · Foreground-window summary</p></div><span class="badge">Synthetic demo · Offline report · No external assets</span></header>
+<div class="cards"><div class="card"><small>Session elapsed</small><strong>01:15:00</strong></div><div class="card"><small>Foreground time</small><strong>01:00:00</strong></div><div class="card"><small>Excluded time</small><strong>00:15:00</strong></div><div class="card"><small>Applications</small><strong>3</strong></div></div>
+<section aria-labelledby="tree-title"><h2 id="tree-title">Application tree</h2><p class="muted">Explore applications, foreground executables and observed titles.</p><div class="tree-tools" hidden><label class="muted" for="entry-search">Search</label><input id="entry-search" type="search" placeholder="Applications, executables, titles…" autocomplete="off"><button id="expand-all" type="button">Expand all</button><button id="collapse-all" type="button">Collapse all</button><button id="theme-toggle" type="button" aria-pressed="false">Dark theme</button><small id="search-status" role="status" aria-live="polite">3 of 3 applications</small></div><div class="app-tree"><div class="tree-head"><span>Application / detail</span><span class="number">Time</span><span class="number">Share</span><span></span></div><details data-app open><summary class="tree-row"><span class="tree-name"><span class="chevron" aria-hidden="true"></span><span class="process-icon" aria-hidden="true"><svg aria-hidden="true" focusable="false" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256" style="fill:#00acff"/><path d="M440 166.1c-10.7-22.2-23.3-39.4-42.1-57.5-39-37.6-87-57-141.2-57-33.5 0-59.9 5.7-88.7 19.4-62 29.4-105.1 88.2-115 156.7-2 13.7-2 41.3 0 56.3 4.6 35 18.5 68.2 40.9 97.4 8 10.4 26.3 28.9 36.1 36.3 29.9 22.8 64.2 37.1 100.1 41.7 11.5 1.5 41.2 1.3 53.9-.3 36.3-4.8 73-20.7 101.8-44.3 10.5-8.6 26.3-25.3 34.4-36.2 27.2-36.8 40.3-76.4 40.3-121.8 0-34.5-5.9-60.7-20.5-90.7m-160.9 41.6-14.9 2.1 9.2-11.8 14.9-2.1zm149.4 70.7c-3.6 28.9-15.9 58.8-33.9 82.7-6.6 8.9-22.4 24.9-31.6 32-17.2 13.4-35.1 22.7-57 29.6-7.5 2.3-8.8 2.3-8.3.2 1.5-5.1 2.6-11.9 3-18.9.6-11.1 7.7-28.7 14.7-36.7 6.2-7.1 7.4-12.7 7.5-35.6.1-19 .3-21.2 2.7-29.7 4.2-14.4 8.5-24.7 13.5-32 2.6-3.8 6.7-10.4 9.1-14.8s5.9-10.4 7.8-13.2c4.9-7.4 15.4-17.7 20.6-20.1 5.8-2.7 12.2-10 14.3-16.4 2.2-6.6 1.5-16.9-1.3-20.7-1.7-2.2-2.7-2.6-7-2.6-4 0-5.6-.6-7.6-2.4-2.7-2.5-4.7-2.2-4.7.8 0 2.4-3.6 6.8-4.6 5.8-.5-.4 0-2.9 1-5.5 3.6-9.5 4.8-15.6 4.2-21.7-1-10.2-7.3-25.6-10.7-26.3-.9-.2-5.3 2.9-10 6.8-24.3 20.4-42.7 34.4-55.6 42.2-6.1 3.7-6.2 3.7-16.5 3.5-12.2-.2-14 .4-34.4 12.8-7.1 4.2-15 8.6-17.7 9.6-2.6 1-11.2 2.5-19 3.3-16.1 1.6-20.4 2.6-26.4 6.1-6 3.4-7.5 6-6.2 10.6 1.3 4.5 7.9 13.3 15.8 21.1l6 5.9-4.6 7.1c-2.6 3.9-6.4 11.2-8.5 16.1-4.2 9.8-5.4 11.6-13.8 22-7.3 9-15.4 22-23 36.8-6.4 12.7-9.5 16-21.4 22.8-6.6 3.8-6.4 3.9-13.9-7.4-13.8-20.8-23.3-45.5-27.1-70.6-1.9-12.6-1.8-38.5.1-51.6 2.9-20 10.5-41.8 20.9-60.2 14.1-24.9 39.8-50.7 64.7-64.7 27.3-15.4 54.9-22.6 86.4-22.6 29.7 0 52.4 5.4 78.8 18.6 17.4 8.8 30.9 18.8 45.8 34.1 23.8 24.5 39 53.1 46 87 2.6 12.8 3.6 42.3 1.9 56.2" style="fill:#fff"/></svg></span>librewolf</span><span class="number">00:30:00</span><span class="number muted">50.0%</span><span class="bar" aria-hidden="true"><span style="width:50.0000%"></span></span></summary><div class="tree-children"><div class="tree-section">Observed window titles · separate breakdown</div><div class="tree-row" data-entry><span class="tree-name">Hyprland documentation — LibreWolf</span><span class="number">00:18:00</span><span class="number muted">30.0%</span><span class="bar" aria-hidden="true"><span style="width:30.0000%"></span></span></div><div class="tree-row" data-entry><span class="tree-name">Synthetic issue tracker — LibreWolf</span><span class="number">00:12:00</span><span class="number muted">20.0%</span><span class="bar" aria-hidden="true"><span style="width:20.0000%"></span></span></div></div></details><details data-app open><summary class="tree-row"><span class="tree-name"><span class="chevron" aria-hidden="true"></span><span class="process-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3m6 0h4"/></svg></span>foot</span><span class="number">00:20:00</span><span class="number muted">33.3%</span><span class="bar" aria-hidden="true"><span style="width:33.3333%"></span></span></summary><div class="tree-children"><div class="tree-section">Foreground executables</div><details><summary class="tree-row"><span class="tree-name"><span class="chevron" aria-hidden="true"></span><span class="process-icon" aria-hidden="true"><span class="process-pi">π</span></span>pi</span><span class="number">00:08:00</span><span class="number muted">13.3%</span><span class="bar" aria-hidden="true"><span style="width:13.3333%"></span></span></summary><div class="tree-children"><div class="tree-section">Observed agent labels</div><div class="tree-row" data-entry><span class="tree-name">π - Synthetic tracker task</span><span class="number">00:08:00</span><span class="number muted">13.3%</span><span class="bar" aria-hidden="true"><span style="width:13.3333%"></span></span></div></div></details><details><summary class="tree-row"><span class="tree-name"><span class="chevron" aria-hidden="true"></span><span class="process-icon" aria-hidden="true"><svg aria-hidden="true" focusable="false" viewBox="0 0 512 512"><path d="m100.5 340.4 100.7-56.5 1.7-4.9-1.7-2.7h-4.9l-16.9-1-57.6-1.6-49.8-2.1-48.4-2.6-12.2-2.6-11.4-15 1.2-7.5 10.2-6.8 14.6 1.3 32.4 2.2L107 244l35.2 2.1 52.2 5.4h8.3l1.2-3.3-2.9-2.1-2.2-2.1-50.3-34-54.4-36-28.5-20.7-15.4-10.5-7.8-9.9-3.4-21.5L53 96l18.8 1.3 4.8 1.3 19.1 14.6 40.7 31.5 53.1 39.1 7.8 6.5 3.1-2.2.4-1.6-3.5-5.8-28.9-52.2-30.8-53.1-13.7-22-3.6-13.4c-1.4-5.1-2.1-10.3-2.2-15.6l16-21.6 8.8-2.9 21.2 2.9 9 7.8 13.2 30.2 21.4 47.6 33.2 64.6 9.7 19.2 5.2 17.7 1.9 5.4h3.4v-3.1l2.7-36.4 5.1-44.7 4.9-57.5 1.7-16.2 8-19.4 15.9-10.5 12.5 6 10.2 14.6-1.4 9.5-6.1 39.5-11.9 61.9-7.8 41.4h4.5l5.2-5.2 21-27.9 35.2-44 15.6-17.5 18.1-19.3 11.7-9.2h22l16.2 24.1-7.3 24.9-22.7 28.7-18.8 24.4-27 36.3-16.9 29 1.6 2.3 4-.4 60.9-12.9 32.9-6 39.3-6.7 17.8 8.3 1.9 8.4-7 17.2-42 10.4-49.3 9.9-73.4 17.3-.9.6 1 1.3 33 3.1 14.1.8h34.6l64.4 4.8 16.9 11.1 10.1 13.6-1.7 10.3-25.9 13.2-35-8.3-81.7-19.4-28-7h-3.9v2.3l23.3 22.8 42.8 38.6L455 410l2.7 12.3-6.9 9.7-7.3-1-47-35.3-18.2-15.9-41.1-34.6h-2.7v3.6l9.5 13.8 50 75.1 2.6 23-3.6 7.5-13 4.5-14.3-2.6-28.7-40.7-30.2-46.2-24.4-41.5-3 1.7L265 498.2l-6.7 7.9-15.6 6-12.9-9.8-6.9-15.9 6.9-31.5 8.3-41 6.7-32.6 6.1-40.5 3.6-13.5-.3-.9-3 .4-30.6 42-46.5 62.8-36.8 39.4-8.8 3.5-15.3-7.9 1.4-14.1 8.6-12.6 50.9-64.8 30.7-40.1 19.8-23.2-.1-3.4h-1.2L88.1 395.9 64 399.1l-10.4-9.7 1.3-15.9 4.9-5.2 40.7-28c.1-.1 0 .1 0 .1" style="fill:#d97757"/></svg></span>claude</span><span class="number">00:06:00</span><span class="number muted">10.0%</span><span class="bar" aria-hidden="true"><span style="width:10.0000%"></span></span></summary><div class="tree-children"><div class="tree-section">Observed agent labels</div><div class="tree-row" data-entry><span class="tree-name">Claude — Synthetic infra task</span><span class="number">00:06:00</span><span class="number muted">10.0%</span><span class="bar" aria-hidden="true"><span style="width:10.0000%"></span></span></div></div></details><div class="tree-row" data-entry><span class="tree-name"><span class="process-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" focusable="false"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-13-2 20"/></svg></span>nvim</span><span class="number">00:04:00</span><span class="number muted">6.7%</span><span class="bar" aria-hidden="true"><span style="width:6.6667%"></span></span></div><div class="tree-row" data-entry><span class="tree-name"><span class="process-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" focusable="false"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="2"/></svg></span>Unknown — multiple-foreground-roots</span><span class="number">00:02:00</span><span class="number muted">3.3%</span><span class="bar" aria-hidden="true"><span style="width:3.3333%"></span></span></div><div class="tree-section">Observed window titles · separate breakdown</div><div class="tree-row" data-entry><span class="tree-name">π - Synthetic tracker task</span><span class="number">00:08:00</span><span class="number muted">13.3%</span><span class="bar" aria-hidden="true"><span style="width:13.3333%"></span></span></div><div class="tree-row" data-entry><span class="tree-name">Claude — Synthetic infra task</span><span class="number">00:06:00</span><span class="number muted">10.0%</span><span class="bar" aria-hidden="true"><span style="width:10.0000%"></span></span></div><div class="tree-row" data-entry><span class="tree-name">foot (synthetic window title)</span><span class="number">00:06:00</span><span class="number muted">10.0%</span><span class="bar" aria-hidden="true"><span style="width:10.0000%"></span></span></div></div></details><details data-app open><summary class="tree-row"><span class="tree-name"><span class="chevron" aria-hidden="true"></span><span class="process-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" focusable="false"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-13-2 20"/></svg></span>fixture.Editor</span><span class="number">00:10:00</span><span class="number muted">16.7%</span><span class="bar" aria-hidden="true"><span style="width:16.6667%"></span></span></summary><div class="tree-children"><div class="tree-section">Observed window titles · separate breakdown</div><div class="tree-row" data-entry><span class="tree-name">report.cjs — Example project</span><span class="number">00:10:00</span><span class="number muted">16.7%</span><span class="bar" aria-hidden="true"><span style="width:16.6667%"></span></span></div></div></details><p class="tree-empty" id="no-matches" hidden>No matching applications or details.</p></div><p class="tree-note">Shares use total tracked foreground time. Executables and window titles are separate, overlapping breakdowns; do not add them together. Agent labels cover correlated observations only. Expanding or filtering never changes recorded totals.</p><noscript><p class="tree-note">Application groups can be expanded without JavaScript. Search, theme and bulk controls require JavaScript.</p></noscript></section>
 <section><h2>Checkpoint snapshot</h2><p>Checkpoint as of <time datetime="2026-01-01T10:15:00.000Z">2026-01-01T10:15:00.000Z</time> (saved-at timestamp).</p><p class="notice">Latest saved snapshot only, typically 5 seconds behind the tracker, plus scheduling/I/O delay. This is not a live query. It can be much older if tracking stopped or saves failed. No time after this snapshot was added by export.</p><details><summary>Saved idle/lock detection metadata (not queried by export)</summary><pre>{
   &quot;activityDetection&quot;: {
     &quot;enabled&quot;: true,
@@ -18,12 +138,69 @@
     &quot;lockScope&quot;: &quot;hyprland-0.56.2-polled&quot;
   }
 }</pre></details></section>
-<div class="cards"><div class="card"><small>Session elapsed</small><strong>01:15:00</strong></div><div class="card"><small>Foreground time</small><strong>01:00:00</strong></div><div class="card"><small>Excluded time</small><strong>00:15:00</strong></div><div class="card"><small>Applications</small><strong>3</strong></div></div>
-<section><h2>Where your focus went</h2><div class="overview"><div class="donut" role="img" aria-label="Application shares of tracked foreground time; values in adjacent table"><div class="donut-inner"><strong>80%</strong><small>of elapsed time tracked</small></div></div><div class="table-wrap"><table><thead><tr><th>Application</th><th class="bar-cell"></th><th class="number">Time</th><th class="number">Share</th></tr></thead><tbody><tr><td><span class="dot" style="background:#a6a1ff"></span>librewolf</td><td class="bar-cell"><div class="bar"><span style="width:50.0000%;background:#a6a1ff"></span></div></td><td class="number">00:30:00</td><td class="number muted">50.0%</td></tr><tr><td><span class="dot" style="background:#63d5c4"></span>foot</td><td class="bar-cell"><div class="bar"><span style="width:33.3333%;background:#63d5c4"></span></div></td><td class="number">00:20:00</td><td class="number muted">33.3%</td></tr><tr><td><span class="dot" style="background:#f3bb77"></span>fixture.Editor</td><td class="bar-cell"><div class="bar"><span style="width:16.6667%;background:#f3bb77"></span></div></td><td class="number">00:10:00</td><td class="number muted">16.7%</td></tr></tbody></table><small>Shares are relative to tracked time, not total elapsed time.</small></div></div></section>
-<section><h2>Window-title breakdown</h2><p class="muted">Opt-in window titles, not verified browser URLs or terminal commands. May contain private information.</p><div class="table-wrap"><table><thead><tr><th>Application</th><th>Observed window title</th><th class="number">Time</th><th class="number">Share</th></tr></thead><tbody><tr><td class="muted">foot</td><td class="title">π - Synthetic tracker task</td><td class="number">00:08:00</td><td class="number muted">13.3%</td></tr><tr><td class="muted">foot</td><td class="title">Claude — Synthetic infra task</td><td class="number">00:06:00</td><td class="number muted">10.0%</td></tr><tr><td class="muted">foot</td><td class="title">foot (synthetic window title)</td><td class="number">00:06:00</td><td class="number muted">10.0%</td></tr><tr><td class="muted">librewolf</td><td class="title">Hyprland documentation — LibreWolf</td><td class="number">00:18:00</td><td class="number muted">30.0%</td></tr><tr><td class="muted">librewolf</td><td class="title">Synthetic issue tracker — LibreWolf</td><td class="number">00:12:00</td><td class="number muted">20.0%</td></tr><tr><td class="muted">fixture.Editor</td><td class="title">report.cjs — Example project</td><td class="number">00:10:00</td><td class="number muted">16.7%</td></tr></tbody></table></div></section>
-<section><h2>foot foreground executables</h2><p class="muted">Opt-in PTY/foreground-group snapshots. Application totals remain unchanged; these rows subdivide observed foot time, including unknowns. No command arguments, projects, remote SSH commands or tmux panes are inferred.</p><div class="table-wrap"><table><thead><tr><th>Application</th><th>Executable / unknown reason</th><th class="number">Time</th><th class="number">Share of foot</th></tr></thead><tbody><tr><td class="muted">foot</td><td>pi</td><td class="number">00:08:00</td><td class="number muted">40.0%</td></tr><tr><td class="muted">foot</td><td>claude</td><td class="number">00:06:00</td><td class="number muted">30.0%</td></tr><tr><td class="muted">foot</td><td>nvim</td><td class="number">00:04:00</td><td class="number muted">20.0%</td></tr><tr><td class="muted">foot</td><td>Unknown — multiple-foreground-roots</td><td class="number">00:02:00</td><td class="number muted">10.0%</td></tr></tbody></table></div></section>
-<section><h2>Agent session labels</h2><p class="muted">Pi/Claude foreground executables correlated with observed window titles. A named session may appear here, but these are literal title-derived labels, not verified session names or IDs. Decorations can split entries and identical titles merge. Labels wait for a matching process observation after title changes.</p><div class="table-wrap"><table><thead><tr><th>Agent</th><th>Observed title / session label</th><th class="number">Time</th></tr></thead><tbody><tr><td>pi</td><td class="title">π - Synthetic tracker task</td><td class="number">00:08:00</td></tr><tr><td>claude</td><td class="title">Claude — Synthetic infra task</td><td class="number">00:06:00</td></tr></tbody></table></div></section>
+<section><details class="supporting"><summary>Application overview</summary><div class="overview"><div class="donut" role="img" aria-label="Application shares of tracked foreground time; values in adjacent table"><div class="donut-inner"><strong>80%</strong><small>of elapsed time tracked</small></div></div><div class="table-wrap"><table><thead><tr><th>Application</th><th class="bar-cell"></th><th class="number">Time</th><th class="number">Share</th></tr></thead><tbody><tr><td><span class="dot" style="background:#2563eb"></span>librewolf</td><td class="bar-cell"><div class="bar"><span style="width:50.0000%;background:#2563eb"></span></div></td><td class="number">00:30:00</td><td class="number muted">50.0%</td></tr><tr><td><span class="dot" style="background:#0d9488"></span>foot</td><td class="bar-cell"><div class="bar"><span style="width:33.3333%;background:#0d9488"></span></div></td><td class="number">00:20:00</td><td class="number muted">33.3%</td></tr><tr><td><span class="dot" style="background:#d97706"></span>fixture.Editor</td><td class="bar-cell"><div class="bar"><span style="width:16.6667%;background:#d97706"></span></div></td><td class="number">00:10:00</td><td class="number muted">16.7%</td></tr></tbody></table><small>Shares are relative to tracked time, not total elapsed time.</small></div></div></details></section>
+<section><details class="supporting"><summary>Window-title breakdown</summary><p class="muted">Opt-in window titles, not verified browser URLs or terminal commands. May contain private information.</p><div class="table-wrap"><table><thead><tr><th>Application</th><th>Observed window title</th><th class="number">Time</th><th class="number">Share</th></tr></thead><tbody><tr><td class="muted">foot</td><td class="title">π - Synthetic tracker task</td><td class="number">00:08:00</td><td class="number muted">13.3%</td></tr><tr><td class="muted">foot</td><td class="title">Claude — Synthetic infra task</td><td class="number">00:06:00</td><td class="number muted">10.0%</td></tr><tr><td class="muted">foot</td><td class="title">foot (synthetic window title)</td><td class="number">00:06:00</td><td class="number muted">10.0%</td></tr><tr><td class="muted">librewolf</td><td class="title">Hyprland documentation — LibreWolf</td><td class="number">00:18:00</td><td class="number muted">30.0%</td></tr><tr><td class="muted">librewolf</td><td class="title">Synthetic issue tracker — LibreWolf</td><td class="number">00:12:00</td><td class="number muted">20.0%</td></tr><tr><td class="muted">fixture.Editor</td><td class="title">report.cjs — Example project</td><td class="number">00:10:00</td><td class="number muted">16.7%</td></tr></tbody></table></div></details></section>
+<section><details class="supporting"><summary>foot foreground executables</summary><p class="muted">Opt-in PTY/foreground-group snapshots. Application totals remain unchanged; these rows subdivide observed foot time, including unknowns. No command arguments, projects, remote SSH commands or tmux panes are inferred.</p><div class="table-wrap"><table><thead><tr><th>Application</th><th>Executable / unknown reason</th><th class="number">Time</th><th class="number">Share of foot</th></tr></thead><tbody><tr><td class="muted">foot</td><td>pi</td><td class="number">00:08:00</td><td class="number muted">40.0%</td></tr><tr><td class="muted">foot</td><td>claude</td><td class="number">00:06:00</td><td class="number muted">30.0%</td></tr><tr><td class="muted">foot</td><td>nvim</td><td class="number">00:04:00</td><td class="number muted">20.0%</td></tr><tr><td class="muted">foot</td><td>Unknown — multiple-foreground-roots</td><td class="number">00:02:00</td><td class="number muted">10.0%</td></tr></tbody></table></div></details></section>
+<section><details class="supporting"><summary>Agent session labels</summary><p class="muted">Pi/Claude foreground executables correlated with observed window titles. A named session may appear here, but these are literal title-derived labels, not verified session names or IDs. Decorations can split entries and identical titles merge. Labels wait for a matching process observation after title changes.</p><div class="table-wrap"><table><thead><tr><th>Agent</th><th>Observed title / session label</th><th class="number">Time</th></tr></thead><tbody><tr><td>pi</td><td class="title">π - Synthetic tracker task</td><td class="number">00:08:00</td></tr><tr><td>claude</td><td class="title">Claude — Synthetic infra task</td><td class="number">00:06:00</td></tr></tbody></table></div></details></section>
 <section><h2>Time left out</h2><div class="table-wrap"><table><tbody><tr><td>paused</td><td class="number">00:05:00</td><td class="number muted">6.7% of elapsed</td></tr><tr><td>idle</td><td class="number">00:04:00</td><td class="number muted">5.3% of elapsed</td></tr><tr><td>locked</td><td class="number">00:03:00</td><td class="number muted">4.0% of elapsed</td></tr><tr><td>activity-unavailable</td><td class="number">00:01:00</td><td class="number muted">1.3% of elapsed</td></tr><tr><td>no focus</td><td class="number">00:01:00</td><td class="number muted">1.3% of elapsed</td></tr><tr><td>IPC unavailable</td><td class="number">00:01:00</td><td class="number muted">1.3% of elapsed</td></tr></tbody></table></div><p class="muted">IPC outage notifications: 1. Paused, no-focus, idle, locked and unavailable periods are not attributed when their gates are enabled.</p></section>
 <div class="notice"><strong>Foreground time is not proof of active work.</strong> Automatic idle/lock gating was enabled at this snapshot; signal: active. Input-idle cutoff: 00:05:00; pre-cutoff grace is counted. Unavailable signals exclude time. Lock detection is polled and reviewed for Hyprland 0.56.2 only. Activity policy describes the current run, not necessarily all resumed history; boundaries have polling/delivery latency. Browser URLs are not resolved. Foot executable attribution requires opt-in and a provable PTY association; ambiguous cases are unknown. Window titles are app-provided text, not authoritative process attribution.</div>
-<footer>Generated locally. No scripts, fonts, analytics or network requests. This file contains application names and opt-in window titles and opt-in foreground executable names; treat it as private. Time values are rounded down to whole seconds.</footer>
-</main></body></html>
+<footer><div class="footer-line"><span>Generated locally · Private report</span><span class="icon-credit">Icons by <a href="https://selfh.st/icons/" target="_blank" rel="noopener noreferrer">selfh.st</a><span aria-hidden="true"> · </span><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a><span class="credit-info"><button type="button" id="credit-toggle" aria-label="Icon attribution details" aria-describedby="credit-tooltip" aria-controls="credit-tooltip" aria-expanded="false">i</button><span class="credit-tooltip" id="credit-tooltip" role="tooltip">SVG markup adapted for inline HTML and accessibility; artwork unchanged. Full attribution is bundled with the project.</span></span></span></div><p class="footer-privacy">Embedded report controls only; no external scripts, fonts, analytics or automatic network requests. This file contains application names and opt-in window titles and opt-in foreground executable names; treat it as private. Time values are rounded down to whole seconds.</p></footer>
+</main><script>(() => {
+  const tree = document.querySelector('.app-tree');
+  const search = document.querySelector('#entry-search');
+  const groups = [...tree.querySelectorAll('[data-app]')];
+  let previousOpen;
+  search.addEventListener('input', () => {
+    const query = search.value.trim().toLocaleLowerCase();
+    if (query && !previousOpen) previousOpen = [...tree.querySelectorAll('details')].filter(d => d.open);
+    let count = 0;
+    for (const group of groups) {
+      const parentMatches = group.querySelector('summary').textContent.toLocaleLowerCase().includes(query);
+      const rows = [...group.querySelectorAll('[data-entry]')];
+      for (const row of rows) row.hidden = !parentMatches && !row.textContent.toLocaleLowerCase().includes(query);
+      for (const detail of group.querySelectorAll('details')) {
+        const matches = detail.querySelector('summary').textContent.toLocaleLowerCase().includes(query);
+        if (matches) for (const row of detail.querySelectorAll('[data-entry]')) row.hidden = false;
+        detail.hidden = !parentMatches && !matches && ![...detail.querySelectorAll('[data-entry]')].some(row => !row.hidden);
+      }
+      group.hidden = !parentMatches && !rows.some(row => !row.hidden);
+      if (!group.hidden) count++;
+      if (query && !group.hidden) for (const detail of group.querySelectorAll('details')) detail.open = true;
+      if (query && !group.hidden) group.open = true;
+    }
+    if (!query && previousOpen) {
+      for (const detail of tree.querySelectorAll('details')) detail.open = previousOpen.includes(detail);
+      previousOpen = undefined;
+    }
+    document.querySelector('#search-status').textContent = count + ' of ' + groups.length + ' applications';
+    document.querySelector('#no-matches').hidden = count !== 0;
+  });
+  document.querySelector('#expand-all').addEventListener('click', () => {
+    for (const detail of tree.querySelectorAll('details')) if (!detail.closest('[hidden]')) detail.open = true;
+  });
+  document.querySelector('#collapse-all').addEventListener('click', () => {
+    for (const detail of tree.querySelectorAll('details')) detail.open = false;
+  });
+  const theme = document.querySelector('#theme-toggle');
+  theme.addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme !== 'dark';
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    theme.setAttribute('aria-pressed', String(dark));
+    theme.textContent = dark ? 'Light theme' : 'Dark theme';
+  });
+  const info = document.querySelector('.credit-info');
+  const credit = document.querySelector('#credit-toggle');
+  const closeCredit = () => credit.setAttribute('aria-expanded', 'false');
+  credit.addEventListener('click', () => {
+    const opening = credit.getAttribute('aria-expanded') !== 'true';
+    if (opening) delete info.dataset.dismissed; else info.dataset.dismissed = 'true';
+    credit.setAttribute('aria-expanded', String(opening));
+  });
+  for (const event of ['pointerenter', 'focusin']) info.addEventListener(event, () => { delete info.dataset.dismissed; });
+  info.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { closeCredit(); info.dataset.dismissed = 'true'; }
+  });
+  document.addEventListener('click', event => { if (!info.contains(event.target)) closeCredit(); });
+  info.addEventListener('focusout', event => { if (!info.contains(event.relatedTarget)) closeCredit(); });
+  document.querySelector('.tree-tools').hidden = false;
+})();</script></body></html>
