@@ -81,3 +81,18 @@ test('offline report controls work under CSP, on mobile and without scripts', { 
     await new Promise(resolve => server.close(resolve))
   }
 })
+
+
+test('process icons use reviewed assets and safe fallbacks, leaving labels text-only', () => {
+  const { processIcon } = require('./process-icons.cjs')
+  assert.match(processIcon('claude'), /#d97757/)
+  assert.match(processIcon('librewolf'), /#00acff/)
+  assert.match(processIcon('pi'), /process-pi/)
+  for (const name of ['nvim', 'foot', 'unknown', '__proto__', '</svg><script>bad</script>']) {
+    assert.match(processIcon(name), /aria-hidden="true"/)
+    assert.doesNotMatch(processIcon(name), /<script|http:|undefined|\[object Object\]/)
+  }
+  const html = renderHtml(report)
+  assert.equal([...html.matchAll(/class="process-icon"/g)].length, 4)
+  assert.doesNotMatch(html, /process-icon[^<]*Documentation/)
+})

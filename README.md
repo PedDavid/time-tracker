@@ -169,6 +169,9 @@ executables. Pi/Claude executables can expand into correlated title-derived
 labels. Search filters applications and details; **Expand all** and **Collapse
 all** control the hierarchy. Clearing search restores the previous expansion.
 The theme button switches between light and dark for the current report view.
+Process rows use small selfh.st brand icons where available and neutral fallbacks
+otherwise; titles and session labels remain text-only. Icons are embedded in the
+report, with provenance and licensing in `poc/icons/README.md`.
 
 Application totals remain authoritative. Executable and title breakdowns overlap
 and must not be added together; agent labels may cover only part of executable

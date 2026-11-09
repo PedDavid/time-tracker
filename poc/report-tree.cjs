@@ -1,4 +1,5 @@
 'use strict'
+const { processIcon } = require('./process-icons.cjs')
 
 // No report data enters executable code. All labels are escaped by the renderer.
 const script = `(() => {
@@ -85,6 +86,9 @@ button:hover{background:var(--soft)}
 summary.tree-row{cursor:pointer;list-style:none;font-weight:600}
 summary::-webkit-details-marker{display:none}
 summary.tree-row:hover{background:var(--soft)}
+.process-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-right:8px;vertical-align:-3px;color:var(--muted)}
+.process-icon svg{display:block;width:16px;height:16px;flex-shrink:0}
+.process-pi{font:19px/16px Georgia,serif}
 .tree-name{min-width:0;overflow-wrap:anywhere}
 .chevron{display:inline-block;width:20px;color:var(--muted)}
 .chevron:before{content:'›'}
@@ -123,17 +127,17 @@ section{padding:16px}
 function renderTree(report, escape, duration) {
   const percent = ms => report.trackedMs > 0 ? ms / report.trackedMs * 100 : 0
   const cells = ms => `<span class="number">${duration(ms)}</span><span class="number muted">${percent(ms).toFixed(1)}%</span><span class="bar" aria-hidden="true"><span style="width:${Math.max(0, Math.min(100, percent(ms))).toFixed(4)}%"></span></span>`
-  const leaf = (label, ms) => `<div class="tree-row" data-entry><span class="tree-name">${escape(label)}</span>${cells(ms)}</div>`
+  const leaf = (label, ms, process = false) => `<div class="tree-row" data-entry><span class="tree-name">${process ? processIcon(label) : ''}${escape(label)}</span>${cells(ms)}</div>`
   const groups = report.apps.map(([app, ms]) => {
     const titles = report.titlesEnabled ? (report.details || []).filter(row => row.app === app) : []
     const terminals = report.footEnabled ? (report.terminals || []).filter(row => row.app === app) : []
     const executables = terminals.map(row => {
       const labels = report.titlesEnabled && row.executable ? (report.agentLabels || []).filter(label => label.app === app && label.executable === row.executable) : []
       const name = row.executable || `Unknown — ${row.reason || 'unavailable'}`
-      return labels.length ? `<details><summary class="tree-row"><span class="tree-name"><span class="chevron" aria-hidden="true"></span>${escape(name)}</span>${cells(row.ms)}</summary><div class="tree-children"><div class="tree-section">Observed agent labels</div>${labels.map(label => leaf(label.label, label.ms)).join('')}</div></details>` : leaf(name, row.ms)
+      return labels.length ? `<details><summary class="tree-row"><span class="tree-name"><span class="chevron" aria-hidden="true"></span>${processIcon(row.executable)}${escape(name)}</span>${cells(row.ms)}</summary><div class="tree-children"><div class="tree-section">Observed agent labels</div>${labels.map(label => leaf(label.label, label.ms)).join('')}</div></details>` : leaf(name, row.ms, true)
     }).join('')
     const children = `${terminals.length ? `<div class="tree-section">Foreground executables</div>${executables}` : ''}${titles.length ? `<div class="tree-section">Observed window titles · separate breakdown</div>${titles.map(row => leaf(row.title, row.ms)).join('')}` : ''}`
-    return `<details data-app open><summary class="tree-row"><span class="tree-name"><span class="chevron" aria-hidden="true"></span>${escape(app)}</span>${cells(ms)}</summary><div class="tree-children">${children || '<p class="tree-empty">No detail observations recorded for this application.</p>'}</div></details>`
+    return `<details data-app open><summary class="tree-row"><span class="tree-name"><span class="chevron" aria-hidden="true"></span>${processIcon(app)}${escape(app)}</span>${cells(ms)}</summary><div class="tree-children">${children || '<p class="tree-empty">No detail observations recorded for this application.</p>'}</div></details>`
   }).join('')
   return `<section aria-labelledby="tree-title"><h2 id="tree-title">Application tree</h2><p class="muted">Explore applications, foreground executables and observed titles.</p><div class="tree-tools" hidden><label class="muted" for="entry-search">Search</label><input id="entry-search" type="search" placeholder="Applications, executables, titles…" autocomplete="off"><button id="expand-all" type="button">Expand all</button><button id="collapse-all" type="button">Collapse all</button><button id="theme-toggle" type="button" aria-pressed="false">Dark theme</button><small id="search-status" role="status" aria-live="polite">${report.apps.length} of ${report.apps.length} applications</small></div><div class="app-tree"><div class="tree-head"><span>Application / detail</span><span class="number">Time</span><span class="number">Share</span><span></span></div>${groups || '<p class="tree-empty">No foreground time recorded.</p>'}<p class="tree-empty" id="no-matches" hidden>No matching applications or details.</p></div><p class="tree-note">Shares use total tracked foreground time. Executables and window titles are separate, overlapping breakdowns; do not add them together. Agent labels cover correlated observations only. Expanding or filtering never changes recorded totals.</p><noscript><p class="tree-note">Application groups can be expanded without JavaScript. Search, theme and bulk controls require JavaScript.</p></noscript></section>`
 }
