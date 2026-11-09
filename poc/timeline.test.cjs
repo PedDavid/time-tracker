@@ -169,7 +169,23 @@ test('Claude/Kiro hooks distinguish lifecycle states and do not forward payloads
   assert.equal(hookStatus('kiro-cli', { hook_event_name: 'userPromptSubmit' }), 'working')
   assert.equal(hookStatus('kiro-cli', { hook_event_name: 'stop' }), 'waiting')
   assert.equal(hookStatus('kiro-cli', { hook_event_name: 'preToolUse' }), null)
-  await assert.rejects(hook('claude', { hook_event_name: 'Stop' }, {}), /agent-run/)
+  await assert.rejects(hook('claude', { hook_event_name: 'Stop' }, {}), /no session id/)
+  await assert.rejects(hook('kiro-cli', { hook_event_name: 'stop' }, {}), /no session id/)
+  const kiroHooked = []
+  await hook('kiro-cli', { hook_event_name: 'userPromptSubmit', cwd: '/PRIVATE', session_id: 'kiro-abc-123' }, {}, async e => kiroHooked.push(e))
+  await hook('kiro-cli', { hook_event_name: 'Stop', session_id: 'kiro-abc-123' }, {}, async e => kiroHooked.push(e))
+  assert.deepEqual(kiroHooked.map(e => [e.agent, e.status, e.source]), [['kiro-cli', 'working', 'hook'], ['kiro-cli', 'waiting', 'hook']])
+  assert.equal(kiroHooked[0].session, kiroHooked[1].session)
+  assert.ok(!JSON.stringify(kiroHooked).includes('kiro-abc-123') && !JSON.stringify(kiroHooked).includes('PRIVATE'))
+  assert.equal(hookStatus('kiro-cli', { hook_event_name: 'SessionEnd' }), 'stopped')
+  // Hooks alone: identity is a one-way hash of Claude's session id; nothing else is forwarded.
+  const hooked = []
+  await hook('claude', { hook_event_name: 'UserPromptSubmit', prompt: 'PRIVATE', cwd: '/PRIVATE', session_id: 'abc-123' }, {}, async e => hooked.push(e))
+  assert.equal(hooked.length, 1)
+  assert.deepEqual(Object.keys(hooked[0]).sort(), ['agent', 'session', 'source', 'status', 'type'])
+  assert.equal(hooked[0].source, 'hook')
+  assert.match(hooked[0].session, /^[0-9a-f]{32}$/)
+  assert.ok(!JSON.stringify(hooked[0]).includes('abc-123') && !JSON.stringify(hooked[0]).includes('PRIVATE'))
   const failOpen = spawnSync(process.execPath, [join(__dirname, 'agent-hook.cjs'), 'claude'], { input: '{malformed', encoding: 'utf8' })
   assert.equal(failOpen.status, 0); assert.equal(failOpen.stdout, '')
   assert.match(failOpen.stderr, /Focus tracker/)
@@ -234,7 +250,7 @@ test('real collector serves timeline, enforces same-origin read-only HTTP, and p
     const iconResponse = await fetch(`${url}/api/process-icons`)
     assert.equal(iconResponse.status, 200)
     const icons = await iconResponse.json()
-    assert.deepEqual(Object.keys(icons).sort(), ['claude', 'default', 'foot', 'foot-client', 'librewolf', 'neovim', 'nvim', 'pi'])
+    assert.deepEqual(Object.keys(icons).sort(), ['claude', 'default', 'firefox', 'foot', 'foot-client', 'google-chrome', 'kitty', 'librewolf', 'neovim', 'nvim', 'pi'])
     assert.equal(icons.claude, require('./process-icons.cjs').processIcon('claude'))
     assert.equal(icons.librewolf, require('./process-icons.cjs').processIcon('librewolf'))
     assert.match(icons.pi, /process-pi/)
@@ -295,4 +311,37 @@ test('tracker CLI writes opt-in human timeline intervals without native desktop 
     assert.ok(humans.every(e => e.title === undefined))
     assert.ok(!fs.readFileSync(join(directory, 'events.jsonl'), 'utf8').includes('PRIVATE_TITLE'))
   } finally { await server.close(); fs.rmSync(directory, { recursive: true, force: true }) }
+})
+
+test('hook-only sessions use longer leases than heartbeat-backed sessions', () => {
+  assert.deepEqual(validateEvent({ type: 'agent', agent: 'claude', session: 'a', status: 'working', source: 'hook' }, 0),
+    { type: 'agent', agent: 'claude', session: 'a', status: 'working', source: 'hook' })
+  assert.throws(() => validateEvent({ type: 'agent', agent: 'claude', session: 'a', status: 'working', source: 'other' }, 0), /Invalid agent event/)
+  const minute = 60000
+  const hooked = (at, status) => ({ ...event(at, 'claude', 'h', status), source: 'hook' })
+  // 5 quiet minutes while working: still one continuous span for hook sessions...
+  const quiet = project([hooked(0, 'working'), hooked(5 * minute, 'waiting'), hooked(6 * minute, 'stopped')], 7 * minute, { from: 0, to: 7 * minute })
+  assert.equal(quiet.totals.agentMs, 5 * minute)
+  assert.ok(quiet.spans.every(span => span.status !== 'unknown' && !span.interrupted))
+  // ...but without the hook source (and no heartbeat) it is treated as unknown.
+  const wrapped = project([event(0, 'claude', 'w', 'working'), event(5 * minute, 'claude', 'w', 'waiting'), event(6 * minute, 'claude', 'w', 'stopped')], 7 * minute, { from: 0, to: 7 * minute })
+  assert.equal(wrapped.totals.agentMs, 0)
+  // A hook session silent beyond the working lease (e.g. killed mid-turn) is unknown, not counted.
+  const killed = project([hooked(0, 'working')], 60 * minute, { from: 0, to: 60 * minute })
+  assert.equal(killed.totals.agentMs, 0)
+  assert.ok(killed.spans.some(span => span.status === 'unknown'))
+})
+
+test('claude hook forwards the session title from its transcript and the projection labels the lane', async () => {
+  const fs = require('node:fs'), os = require('node:os'), path = require('node:path')
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'title-'))
+  const file = path.join(dir, 's.jsonl')
+  fs.writeFileSync(file, '{"type":"user","message":"secret prompt"}\n{"type":"ai-title","aiTitle":"Auto name"}\n{"type":"custom-title","customTitle":"My name"}\n')
+  const sent = []
+  await hook('claude', { hook_event_name: 'Stop', session_id: 'abc', transcript_path: file }, {}, async e => { sent.push(e) })
+  assert.equal(sent[0].title, 'My name')
+  assert.ok(!JSON.stringify(sent[0]).includes('secret'))
+  const view = project([{ ...sent[0], at: 0, id: 'a' }, { type: 'agent', agent: 'claude', session: sent[0].session, status: 'working', at: 100, id: 'b' }], 200, { from: 0, to: 200 })
+  assert.ok(view.spans.every(span => span.title === 'My name'))
+  fs.rmSync(dir, { recursive: true })
 })

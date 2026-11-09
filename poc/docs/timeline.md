@@ -137,7 +137,13 @@ node poc/agent-run.cjs --agent claude -- claude \
 ```
 
 Alternatively, merge the generated `hooks` entries into your existing Claude
-settings, preserving other hooks, and launch with:
+settings, preserving other hooks. Plain `claude` is then tracked with no wrapper:
+each hook correlates its session by a one-way hash of the `session_id` Claude
+includes in every hook payload (nothing else from the payload is kept). Without a
+launcher there is no heartbeat, so these sessions use longer leases: a working
+session silent for more than 10 minutes, or a waiting one silent for more than 30,
+is recorded as unknown, which also covers a killed process. Launching through
+`agent-run.cjs` still gives precise liveness and takes precedence when both are used:
 
 ```sh
 node /absolute/time-tracker/poc/agent-run.cjs --agent claude -- claude
@@ -183,6 +189,18 @@ node /absolute/time-tracker/poc/agent-run.cjs --agent kiro-cli -- \
 execution. Hooks must have `cache_ttl_seconds: 0`, or repeated turns could be
 missed. The `agentSpawn` hook establishes a waiting session.
 
+The launcher is optional. Without it, each hook correlates its session by a
+one-way hash of the `session_id` Kiro includes in the hook's stdin JSON (nothing
+else from the payload is kept), with the same longer leases as Claude hook-only
+sessions: silence beyond 10 minutes while working, or 30 while waiting, is
+recorded as unknown. Kiro documents `session_id` for `agentSpawn`/`SessionStart`
+and `PreToolUse` payloads but not explicitly for every event, and does not say
+whether it survives `--resume`. A hook whose payload lacks it records nothing and
+prints a warning to stderr. Starting through `agent-run.cjs` remains the precise
+option and takes precedence. V3 `SessionStart`/`UserPromptSubmit`/`PostToolUse`/
+`Stop`/`SessionEnd` triggers are recognized; the generated configuration targets
+the 2.x object format.
+
 Kiro's documented CLI hooks do not provide a distinct permission-wait or
 session-end event. Waiting between turns is excluded, but approval pauses
 **inside a turn are included in task wall time**. Launcher exit closes the
@@ -211,11 +229,22 @@ these events are unavailable. `session_shutdown` closes the lane's activity.
 
 ## Reliability and privacy boundaries
 
-- Agents send only the agent name, an opaque session ID, and a lifecycle state.
+- Agents send the agent name, an opaque session ID, and a lifecycle state.
   Hook stdin is bounded, parsed locally, and discarded; prompts, responses,
   session paths, working directories, tool arguments/results, and credentials
   are never forwarded or stored. Integrations are opt-in and do not read agent
-  history directories. Sessions have IDs rather than prompt-derived names.
+  history directories.
+- Exception (Pi, Kiro): Pi's extension sends `pi.getSessionName()` when that API
+  exists, and the Kiro hook reads only the `title` field of its own session file
+  under `~/.kiro/sessions/`. With `--titles`, a focused terminal titled
+  `kiro-cli ... --resume-id <uuid>` is shown as `kiro-cli: <session name>` from
+  the same file. Same sanitizing and limits.
+- Exception: the Claude hook reads the tail of its own session transcript
+  (`transcript_path`) solely to extract the session title (`/rename`/`--name`,
+  else Claude's auto-generated title). That sanitized title (max 120 chars) is
+  stored in the private journal and labels the lane instead of the ID. It can
+  contain private text derived from your prompts; no other transcript content
+  is parsed or kept.
 - Launcher/extension heartbeats run every 10 seconds. A missing heartbeat for
   more than 45 seconds cuts execution back to its **last observed event** and
   labels the remaining interval unknown, excluding it from totals. Until expiry,

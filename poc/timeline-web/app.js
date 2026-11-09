@@ -1,6 +1,14 @@
 'use strict'
 const $ = id => document.getElementById(id)
-const state = { duration: 86400000, end: Date.now(), data: null, selected: null, request: 0 }
+// Default view: today's 09:00-18:00 (yesterday's before 09:00), not live.
+const workday = () => {
+  const day = new Date()
+  if (day.getHours() < 9) day.setDate(day.getDate() - 1)
+  day.setHours(18, 0, 0, 0)
+  return day.getTime()
+}
+const state = { duration: 9 * 3600000, end: workday(), workday: true, data: null, selected: null, request: 0 }
+const MIN_ROW_MS = 60000
 const processIcons = new Map()
 // Only the server's fixed, reviewed icon catalog is parsed as markup. Activity
 // labels remain text and never enter SVG, HTML, URLs, or filesystem paths.
@@ -14,7 +22,9 @@ const iconsReady = fetch('/api/process-icons').then(response => {
   }
 }).catch(() => {})
 function processIcon(name) {
-  const icon = processIcons.get(String(name).toLowerCase()) || processIcons.get('default')
+  const raw = String(name).toLowerCase().replace(/-\d{6,}$/, '')
+  const key = { chrome: 'google-chrome', 'google-chrome-stable': 'google-chrome', 'kiro-cli-chat': 'kiro-cli' }[raw] || raw
+  const icon = processIcons.get(key) || processIcons.get('default')
   if (icon) return icon.cloneNode(true)
   const fallback = element('span', '□', 'process-icon')
   fallback.setAttribute('aria-hidden', 'true')
@@ -26,13 +36,33 @@ $('theme-toggle').onclick = () => {
   $('theme-toggle').setAttribute('aria-pressed', String(dark))
   $('theme-toggle').textContent = dark ? 'Light theme' : 'Dark theme'
 }
-const formatDuration = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 3600)}h ${Math.floor(s / 60) % 60}m ${s % 60}s` }
+// Whole minutes, rounded up, as hours and minutes only.
+const formatDuration = ms => { const m = Math.ceil(ms / 60000), h = Math.floor(m / 60); return h ? `${h}h ${m % 60}m` : `${m}m` }
 const formatDate = ms => new Date(ms).toLocaleString()
 function element(tag, text, className) {
   const el = document.createElement(tag)
   if (text !== undefined) el.textContent = text
   if (className) el.className = className
   return el
+}
+// The resolved foreground executable (foot/kitty observers) names the icon. Only for
+// older spans, or terminals that could not be resolved, fall back to a display-only
+// guess from the (opt-in) title. Claude Code titles start
+// with its idle mark or a spinner glyph; pi/kiro-cli/claude commands name themselves.
+// This never changes recorded data or labels.
+function iconName(span) {
+  if (span.executable) return span.executable
+  const title = span.title || ''
+  if (/^(?:[✳✻✶✽✢]|[◐◑◒◓]|[\u2800-\u28ff]|claude(?:\s|$))/u.test(title)) return 'claude'
+  if (/^(?:π|pi(?:\s|$))/u.test(title)) return 'pi'
+  if (/^kiro(?:-cli)?(?:\s|$)/i.test(title)) return 'kiro-cli'
+  return span.app
+}
+// Track label for your focused spans. Window titles (opt-in) drop leading
+// spinner/status symbols so animated titles stay on one track.
+function spanLabel(span) {
+  if ($('label-by').value === 'title' && span.title) return span.title.replace(/^[^\p{L}\p{N}]+/u, '') || span.title
+  return span.app
 }
 function inspect(span) {
   const panel = $('inspector')
@@ -59,7 +89,7 @@ function render(data) {
   $('empty').hidden = data.spans.length > 0
   if (!data.spans.length) { inspect(null); return }
   const axis = element('div', undefined, 'axis'), ticks = element('div', undefined, 'ticks')
-  axis.append(element('div'), ticks)
+  axis.append(element('div', 'Application / title', 'axis-name'), element('div', 'Total', 'axis-total'), ticks)
   for (let i = 0; i < 5; i++) ticks.append(element('span', new Date(data.from + (data.to - data.from) * i / 4).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })))
   timeline.append(axis)
   const lanes = new Map()
@@ -71,26 +101,32 @@ function render(data) {
     const first = spans[0], lane = element('div', undefined, 'lane')
     const label = element('div', undefined, 'lane-label')
     if (first.agent !== 'human') label.append(processIcon(first.agent))
-    label.append(element('span', first.agent === 'human' ? 'You' : first.agent), element('small', `session ${first.session.slice(0, 8)}`))
+    label.append(element('span', first.agent === 'human' ? 'You' : first.agent), element('small', first.title && first.agent !== 'human' ? first.title : `session ${first.session.slice(0, 8)}`))
+    if (first.title && first.agent !== 'human') label.title = `${first.title} (session ${first.session.slice(0, 8)})`
     const tracks = new Map()
     for (const span of spans) {
-      const name = span.agent === 'human' && span.status === 'tracking' ? span.app : span.status
+      const name = span.agent === 'human' && span.status === 'tracking' ? spanLabel(span) || span.status : span.status
       const key = JSON.stringify([span.status, name])
-      if (!tracks.has(key)) tracks.set(key, { name, status: span.status, spans: [] })
-      tracks.get(key).spans.push(span)
+      if (!tracks.has(key)) tracks.set(key, { name, status: span.status, spans: [], total: 0, first: span.start })
+      const row = tracks.get(key)
+      row.spans.push(span); row.total += span.end - span.start; row.first = Math.min(row.first, span.start)
     }
-    lane.append(label)
     const order = ['tracking', 'working', 'waiting', 'paused', 'idle', 'locked', 'no focus', 'IPC unavailable', 'activity-unavailable', 'unknown']
-    const rows = [...tracks.values()].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status) || a.name.localeCompare(b.name))
-    for (const row of rows) {
+    const rows = [...tracks.values()].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status) ||
+      ($('sort-by').value === 'total' ? b.total - a.total || a.first - b.first : a.first - b.first) || a.name.localeCompare(b.name))
+    lane.append(label)
+    const visible = rows.filter(row => $('show-short').checked || row.total >= MIN_ROW_MS)
+    if (!visible.length) continue
+    for (const row of visible) {
       const subtrack = element('div', undefined, 'subtrack')
       const trackLabel = element('div', undefined, 'subtrack-label')
-      if (first.agent === 'human' && row.status === 'tracking') trackLabel.append(processIcon(row.name))
+      if (first.agent === 'human' && row.status === 'tracking') trackLabel.append(processIcon(iconName(row.spans[0]) || row.name))
       trackLabel.append(element('span', row.name, 'subtrack-name'))
       trackLabel.title = row.name
+      const totalCell = element('div', formatDuration(row.total), 'subtrack-total')
       const track = element('div', undefined, 'track')
       for (const span of row.spans) {
-        const name = span.app || span.status
+        const name = (span.status === 'tracking' && spanLabel(span)) || span.app || span.status
         const button = element('button', undefined, 'span')
         button.style.left = `${100 * (span.start - data.from) / (data.to - data.from)}%`
         button.style.width = `${100 * (span.end - span.start) / (data.to - data.from)}%`
@@ -101,7 +137,7 @@ function render(data) {
         button.onclick = () => inspect(span)
         track.append(button)
       }
-      subtrack.append(trackLabel, track)
+      subtrack.append(trackLabel, totalCell, track)
       lane.append(subtrack)
     }
     timeline.append(lane)
@@ -143,16 +179,23 @@ function updateAgentVisibility() {
 }
 $('include-agents').onchange = updateAgentVisibility
 for (const id of ['agent', 'status', 'live']) $(id).onchange = refresh
-$('range').onchange = () => { state.duration = Number($('range').value); void refresh() }
-$('previous').onclick = () => { $('live').checked = false; state.end = Math.max(state.duration, state.end - state.duration); void refresh() }
-$('next').onclick = () => { $('live').checked = false; state.end += state.duration; void refresh() }
-$('zoom-in').onclick = () => { state.duration = Math.max(60000, state.duration / 2); void refresh() }
-$('zoom-out').onclick = () => { state.duration = Math.min(31 * 86400000, state.duration * 2); void refresh() }
+$('sort-by').onchange = () => { if (state.data) render(state.data) }
+$('label-by').onchange = () => { if (state.data) render(state.data) }
+$('range').onchange = () => {
+  state.workday = $('range').value === 'workday'
+  if (state.workday) { state.duration = 9 * 3600000; state.end = workday(); $('live').checked = false } else state.duration = Number($('range').value)
+  void refresh()
+}
+$('show-short').onchange = () => { if (state.data) render(state.data) }
+$('previous').onclick = () => { $('live').checked = false; state.end = Math.max(state.duration, state.end - (state.workday ? 86400000 : state.duration)); void refresh() }
+$('next').onclick = () => { $('live').checked = false; state.end += state.workday ? 86400000 : state.duration; void refresh() }
+$('zoom-in').onclick = () => { state.workday = false; state.duration = Math.max(60000, state.duration / 2); void refresh() }
+$('zoom-out').onclick = () => { state.workday = false; state.duration = Math.min(31 * 86400000, state.duration * 2); void refresh() }
 $('dates').onsubmit = event => {
   event.preventDefault()
   const from = new Date($('from').value).getTime(), to = new Date($('to').value).getTime()
   if (!Number.isFinite(from) || !Number.isFinite(to) || from < 0 || to <= from || to - from > 31 * 86400000) { $('notice').textContent = 'Choose an increasing date range of up to 31 days.'; return }
-  state.end = to; state.duration = to - from; $('live').checked = false; void refresh()
+  state.end = to; state.duration = to - from; state.workday = false; $('live').checked = false; void refresh()
 }
 $('export').onclick = () => {
   if (!state.data) return

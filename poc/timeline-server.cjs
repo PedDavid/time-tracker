@@ -7,7 +7,7 @@ const { join, resolve } = require('node:path')
 const { TimelineStore, project, defaultDirectory } = require('./timeline-store.cjs')
 const { processIcon } = require('./process-icons.cjs')
 // A fixed asset catalog shared with the offline report. Labels never select files.
-const processIcons = Object.fromEntries(['claude', 'librewolf', 'foot', 'foot-client', 'nvim', 'neovim', 'pi', 'default'].map(name => [name, processIcon(name)]))
+const processIcons = Object.fromEntries(['claude', 'librewolf', 'google-chrome', 'firefox', 'foot', 'kitty', 'foot-client', 'nvim', 'neovim', 'pi', 'kiro-cli', 'kiro', 'default'].map(name => [name, processIcon(name)]))
 
 async function startServer({ directory = defaultDirectory(), port = 4318 } = {}) {
   const store = new TimelineStore(directory)

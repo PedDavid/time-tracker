@@ -1,5 +1,6 @@
 // Load explicitly: pi -e /absolute/path/to/pi-timeline.mjs
-// Uses only lifecycle event names. Never reads prompts, messages, tools or history.
+// Uses lifecycle event names and the session name (pi.getSessionName, when available).
+// Never reads prompts, messages, tools or history.
 import { randomUUID } from 'node:crypto'
 import client from '../timeline-client.cjs'
 
@@ -9,7 +10,13 @@ export default function timeline(pi) {
   const emit = status => {
     const id = session
     if (!id) return queue
-    queue = queue.then(() => client.sendEvent({ type: 'agent', agent: 'pi', session: id, status }))
+    const event = { type: 'agent', agent: 'pi', session: id, status }
+    try {
+      const name = typeof pi.getSessionName === 'function' ? pi.getSessionName() : undefined
+      const title = typeof name === 'string' ? name.replace(/[\p{C}\p{Zl}\p{Zp}]/gu, ' ').trim().slice(0, 120) : ''
+      if (title && status !== 'heartbeat') event.title = title
+    } catch {}
+    queue = queue.then(() => client.sendEvent(event))
       .catch(() => { console.error('Focus tracker: Pi timeline event not saved; check the collector') })
     return queue
   }

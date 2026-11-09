@@ -35,7 +35,7 @@ class Accounting {
     if (!Number.isFinite(now) || now < this.updated) throw new Error('Clock must be monotonic')
     const duration = now - this.updated
     const state = this.state()
-    if (duration > 0) this.onInterval?.(state, this.updated, now, this.focusTitle)
+    if (duration > 0) this.onInterval?.(state, this.updated, now, this.focusTitle, this.focusTerminal?.status === 'resolved' ? this.focusTerminal.executable : null)
     const bucket = state.kind === 'tracking' ? this.apps : this.excluded
     const key = state.app || state.kind
     bucket.set(key, (bucket.get(key) || 0) + duration)

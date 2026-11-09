@@ -35,7 +35,7 @@ class HumanTimeline {
     this.onError = onError
     this.queued = 0
   }
-  record(state, start, end, title) {
+  record(state, start, end, title, executable = null) {
     if (end <= start) return
     if (end - start > 60000) {
       this.flush()
@@ -43,7 +43,7 @@ class HumanTimeline {
       return
     }
     const item = { type: 'human', session: this.session, status: state.kind }
-    if (state.kind === 'tracking') { item.app = state.app; if (title !== null) item.title = title }
+    if (state.kind === 'tracking') { item.app = state.app; if (title !== null) item.title = title; if (executable) item.executable = executable }
     const a = Math.round(this.origin + start), b = Math.round(this.origin + end)
     if (b <= a) return
     const key = JSON.stringify(item)
