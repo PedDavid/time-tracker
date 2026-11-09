@@ -7,6 +7,9 @@ node poc/export-report.cjs --state ./state/session.json --html ./snapshot.html
 
 # Only when the saved checkpoint collected these opted-in details:
 node poc/export-report.cjs --state ./state/foot.json --html ./details.html --titles --foot
+
+# Keep THIS SAME file updated while the exporter is running:
+node poc/export-report.cjs --state ./state/foot.json --html ./live.html --titles --foot --watch
 ```
 
 Without `--state`, the exporter uses
@@ -14,6 +17,26 @@ Without `--state`, the exporter uses
 `~/.local/state/focus-tracker/session.json`. The checkpoint must already exist.
 `--html NEWFILE` is required. `--help` lists the supported options; unknown
 options fail before any reads or writes.
+
+## Keep the file updated: `--watch`
+
+Without `--watch`, export is one-shot: it writes a static snapshot and exits.
+With `--watch`, the exporter stays running and polls the checkpoint every **5
+seconds**. When its rendered contents change, it atomically replaces the **same
+HTML file**. Open that file in your browser and press **Ctrl+R** for newer totals.
+There is no automatic browser refresh, JavaScript, server, or browser launch.
+`--watch-interval SEC` changes the poll interval (0.1–3600 seconds, requires
+`--watch`). Polling faster cannot make the writer save faster; checkpoint delay
+and export polling delay can add together.
+
+Watch mode must start with a **new filename**, just like one-shot export. It
+only replaces reports created by that running exporter, never adopts an
+existing file. If its output is removed, replaced, edited, linked, or made
+public, it stops rather than clobbering it. It also stops on invalid checkpoints,
+privacy-policy changes, or I/O errors, retaining the last successful report when
+possible. Errors go to stderr and give a nonzero exit status. **Ctrl+C** or
+SIGTERM stops watching cleanly; the last report remains. Restart with a new
+output filename—an earlier process's report is not silently claimed.
 
 ## Saved snapshot, not a live query
 
@@ -59,8 +82,9 @@ transcript, history, browser, proc, compositor or native-addon access.
 ## Filesystem behavior
 
 The exporter does **not** construct the writer `Checkpoint`, acquire its lock,
-open/create a lockfile, chmod anything, create directories, rename/delete files,
-or modify the checkpoint. It works while another process holds the writer's
+open/create a lockfile, chmod anything, create directories, or modify the
+checkpoint. Watch mode creates private temporary HTML files and renames them
+over only its own report; no checkpoint or writer lock is renamed/deleted. It works while another process holds the writer's
 exclusive flock. It also works with no `flock` executable installed.
 
 It opens the checkpoint read-only with `O_NOFOLLOW` (and `O_NONBLOCK` so a FIFO
@@ -77,9 +101,12 @@ coordination is necessary. Evident in-place size/mtime changes are rejected;
 consistent reads rely on the tracker's normal atomic-rename writer contract,
 not on supporting arbitrary in-place editors.
 
-The existing HTML writer creates a new file exclusively (`wx`, owner-only
-`0600` subject to a stricter umask). Existing files and final-component symlinks,
-including dangling symlinks, are never overwritten or followed. Checkpoint and
+Both modes initially create a new file exclusively (owner-only `0600`, subject
+to a stricter umask). Pre-existing files and final-component symlinks, including
+dangling symlinks, are never overwritten or followed. Subsequent watch updates
+use private same-directory temporaries and atomic rename, checking the owned
+output's inode, timestamps, size, ownership, permissions and link count before
+replacement. Unchanged rendered snapshots do not rewrite the file. Checkpoint and
 lock output paths are explicitly rejected, including aliases through existing
 parent-directory symlinks. Parent directories must already exist and are not
 changed. As with the tracker, use trusted local directories and normal POSIX
@@ -92,7 +119,7 @@ filename for a retry.
 ## Synthetic verification
 
 ```sh
-node --test poc/export-report.test.cjs
+node --test poc/export-report.test.cjs poc/report-watch.test.cjs
 node --test poc/*.test.cjs
 ```
 
@@ -102,6 +129,9 @@ rename races, successive atomic snapshots while a child holds a writer flock,
 unchanged checkpoint/lock bytes and metadata, bounded reads, ownership and
 permissions checks, corrupt/missing/oversized/symlink/nonregular inputs, output
 collisions and aliases, default XDG lookup, and no native/live-query dependencies.
+Watch tests also cover atomic updates, unchanged snapshots, private permissions,
+external edits/replacements/symlinks/links, failed writes and cleanup, ownership
+rechecks before publishing, a live writer lock, changed consent, and shutdown.
 The writer-lock integration test (like existing checkpoint tests) needs the
 system `flock` command to start its synthetic writer, and the FIFO rejection test
 uses `mkfifo` to create its fixture. The exporter itself needs neither command.

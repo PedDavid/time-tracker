@@ -126,12 +126,21 @@ node poc/export-report.cjs --html ./snapshot-report.html
 # Match the writer's state path and privacy flags exactly:
 node poc/export-report.cjs --state ./state/foot.json --foot --titles \
   --html ./foot-snapshot.html
+
+# Keep one new HTML file updated every five seconds; Ctrl+R in the browser:
+node poc/export-report.cjs --state ./state/foot.json --foot --titles \
+  --html ./live-report.html --watch
 ```
+
+Without `--watch`, export writes once and exits. With it, keep the exporter
+running: it periodically replaces its own report. Ctrl+C stops watching;
+restart with a new filename. No server or automatic browser refresh is needed.
 
 This needs no native addon or compositor and does not acquire the writer lock,
 change state, or add time after the saved snapshot. The HTML shows its as-of
 time: normally around five seconds behind, potentially much older after failed
-saves or a stopped tracker. Use a new output filename each time. See
+saves or a stopped tracker. Watch polling adds its own delay. Use a new output
+filename each time you start an exporter. See
 [live-checkpoint export](poc/docs/live-export.md).
 
 ### What gets saved
@@ -149,7 +158,9 @@ stderr. This is a latest-state checkpoint, not a backup or an audit log.
 Checkpoints are local to each computer; there is no automatic sync or merge.
 
 The tracker writes a report on exit only when `--html` is supplied; the separate
-export command can create one during tracking. Neither overwrites an existing file. The included [example report](poc/example-report.html) contains
+export command can create one during tracking. Neither claims a pre-existing
+file; watch mode can only replace its own newly created report. The included
+[example report](poc/example-report.html) contains
 **synthetic data only**. Download/open it locally to preview the design.
 Generated reports, checkpoints, and binaries are Git-ignored. Custom filenames
 without the usual extensions might not match ignore rules: always inspect
@@ -175,7 +186,7 @@ node x-win/examples/hyprland-subscription-test.cjs x-win/target/debug/x-win.node
 node x-win/examples/hyprland-smoke.cjs x-win/target/debug/x-win.node
 ```
 
-All **74 PoC tests passed** locally. Optional compiled helper tests use a
+All **81 PoC tests passed** locally. Optional compiled helper tests use a
 synthetic Wayland server and skip when development tools are unavailable.
 The suite covers SIGKILL/restart recovery, concurrent writer rejection,
 title opt-in boundaries, HTML injection/overwrite checks, synthetic foot

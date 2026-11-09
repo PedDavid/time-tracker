@@ -8,10 +8,12 @@ const { readCheckpoint } = require('./checkpoint-reader.cjs')
 const { writeHtml } = require('./html-report.cjs')
 
 const HELP = `Read-only export of the latest saved focus-tracker checkpoint
-Usage: node poc/export-report.cjs [--state PATH] --html NEWFILE [--titles] [--foot]
+Usage: node poc/export-report.cjs [--state PATH] --html NEWFILE [--titles] [--foot] [--watch]
   --state PATH   Existing checkpoint (default: XDG_STATE_HOME/focus-tracker/session.json
                  or ~/.local/state/focus-tracker/session.json)
-  --html NEWFILE  New private HTML file; existing files/symlinks are never overwritten
+  --html NEWFILE  New private HTML file; never claim an existing file/symlink
+  --watch        Keep updating this same file from saved checkpoints; Ctrl+R in browser
+  --watch-interval SEC  Poll interval, 0.1–3600 seconds (default 5; requires --watch)
   --titles       Explicit consent to saved private titles; must match checkpoint policy
   --foot         Explicit consent to saved foot data; must match checkpoint policy
   --help, -h     Show this help
@@ -21,17 +23,26 @@ No live query, writer lock, native addon, compositor, proc scan or time accrual.
 function options(args) {
   const config = {
     state: resolve(join(process.env.XDG_STATE_HOME || join(homedir(), '.local/state'), 'focus-tracker', 'session.json')),
-    html: null, titles: false, foot: false, help: false,
+    html: null, titles: false, foot: false, help: false, watch: false, watchInterval: 5,
   }
   for (let i = 0; i < args.length; i++) {
     const flag = args[i]
     if (flag === '--help' || flag === '-h') { config.help = true; continue }
-    if (flag === '--titles' || flag === '--foot') { config[flag.slice(2)] = true; continue }
+    if (flag === '--titles' || flag === '--foot' || flag === '--watch') { config[flag.slice(2)] = true; continue }
+    if (flag === '--watch-interval') {
+      const value = args[++i]
+      if (!value || value.startsWith('-') || !Number.isFinite(Number(value)) || Number(value) < 0.1 || Number(value) > 3600) {
+        throw new Error('--watch-interval must be between 0.1 and 3600 seconds.')
+      }
+      config.watchInterval = Number(value)
+      continue
+    }
     if (flag !== '--state' && flag !== '--html') throw new Error('Unknown option. Use --help for supported export flags.')
     const value = args[++i]
     if (!value || value.startsWith('-')) throw new Error(`Missing path for ${flag}.`)
     config[flag.slice(2)] = resolve(value)
   }
+  if (args.includes('--watch-interval') && !config.watch) throw new Error('--watch-interval requires --watch.')
   if (!config.help && !config.html) throw new Error('--html NEWFILE is required; no report was written.')
   if (config.html === config.state || config.html === `${config.state}.lock`) throw new Error('HTML output must differ from the checkpoint and its lock path.')
   return config
@@ -58,6 +69,9 @@ function main(args = process.argv.slice(2)) {
   // creation occurs until every input/policy/path check has succeeded.
   const report = readCheckpoint(config.state, config.titles, config.foot)
   checkOutputPaths(config.state, config.html)
+  if (config.watch) {
+    return require('./report-watch.cjs').watchReport(config, report, { read: readCheckpoint })
+  }
   try { writeHtml(config.html, report) } catch (error) {
     if (error.code === 'EEXIST') throw new Error('HTML output already exists or is a symlink; choose a new --html filename.')
     throw new Error('Could not create HTML output; existing files are never overwritten. Check the destination permissions and free space.')

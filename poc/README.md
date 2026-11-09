@@ -189,14 +189,26 @@ node poc/export-report.cjs --html ./snapshot-report.html
 # Explicit private state and matching opt-in settings:
 node poc/export-report.cjs --state ./state/foot.json --foot --titles \
   --html ./foot-snapshot.html
+
+# Stay running and update the SAME new file periodically (default 5 seconds):
+node poc/export-report.cjs --state ./state/foot.json --foot --titles \
+  --html ./live-report.html --watch
 ```
+
+One-shot export exits after writing. `--watch` instead keeps its own HTML file
+up to date: press **Ctrl+R** in the browser to reload it. Change polling with
+`--watch-interval SEC`; this does not change checkpoint frequency. Ctrl+C stops
+export, leaving the last report. Each exporter must initially claim a new
+filename; a restarted exporter cannot adopt an old report. There is no server,
+JavaScript, automatic browser refresh, or browser launch.
 
 This reads one atomically saved checkpoint without acquiring the writer lock,
 changing source files, querying live sources or billing additional time. It
 works without the native addon/compositor. The report displays the snapshot's
 as-of time and freshness warning: normally about five seconds behind, possibly
 much older. A legacy checkpoint without `savedAt` uses an explicitly labelled
-file-mtime fallback. The output must be a new file; input/output parent
+file-mtime fallback. Initial output must be a new file; watch mode only replaces
+its own report and stops on external changes or errors. Input/output parent
 directories must already exist. `--titles`/`--foot` must match the saved policy
 exactly. See [live export security and semantics](docs/live-export.md).
 
@@ -339,7 +351,7 @@ Tests cover exact accounting, app switches, repeated observations, no focus,
 pause/resume, outage/recovery, monotonic time, duration conservation, privacy,
 CLI shutdown, invalid options, title opt-in boundaries, HTML escaping, offline
 output, private file permissions, and refusal to overwrite reports. They do not
-require a compositor. All **74 tests passed** locally, including the optional
+require a compositor. All **81 tests passed** locally, including the optional
 compiled helper test against a synthetic Wayland server (skipped when its
 existing development tools are unavailable). New activity tests mock idle/lock transitions, startup,
 disconnections, suspend/stalls, stale observations and manual-pause independence.
