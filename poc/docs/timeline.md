@@ -9,6 +9,9 @@ time, or proof of productive work.
 No npm install, database, Grafana instance, native addon, or compositor is needed
 for the collector, agents, or viewer. Node.js 22+ and Linux `flock` are required.
 The existing foreground tracker still needs its native/desktop prerequisites.
+The viewer uses the report's compact neutral theme: light by default, with a
+keyboard-accessible **Dark theme / Light theme** toggle. Switching themes does
+not change the selected range, filters, span selection, or recorded totals.
 
 ## Screenshots
 
@@ -17,9 +20,17 @@ Pi, and Kiro CLI lanes. Agent execution overlaps personal focus, while waiting
 is displayed separately. No real prompts, window titles, or activity history
 are included.
 
-![Desktop timeline with parallel sessions, separate totals and span details](screenshots/timeline-desktop.png)
+### Light theme
 
-<img src="screenshots/timeline-mobile.png" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
+![Light timeline with parallel sessions, separate totals and span details](https://github.com/PedDavid/time-tracker/blob/7468369cd378220e556790e7f11922a3685e2671/poc/docs/screenshots/timeline-desktop.png?raw=true)
+
+### Dark theme
+
+![Dark timeline with parallel sessions and selected span details](https://github.com/PedDavid/time-tracker/blob/7468369cd378220e556790e7f11922a3685e2671/poc/docs/screenshots/timeline-dark.png?raw=true)
+
+### Mobile
+
+<img src="https://github.com/PedDavid/time-tracker/blob/7468369cd378220e556790e7f11922a3685e2671/poc/docs/screenshots/timeline-mobile.png?raw=true" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
 
 ## Start the collector and viewer
 
@@ -244,7 +255,8 @@ NODE_PATH=/tmp/focus-browser/node_modules node poc/timeline-browser-check.cjs
 
 The check seeds synthetic in-memory activity, starts an isolated collector, and
 validates lane rendering, safe text, span details, filters, navigation, live
-mode, download, and mobile layout. It cleans up its private test history.
+mode, download, light/dark switching by keyboard, theme retention across
+refreshes, and mobile layout. It cleans up its private test history.
 
 Integration references used during implementation:
 
