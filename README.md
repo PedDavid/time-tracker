@@ -7,7 +7,9 @@ Solidtime and not an integration with a hosted time-tracking service.
 
 ## Features
 
-- Application-level foreground-time totals with manual pause/resume.
+- Application-level foreground-time totals with independent manual pause/resume.
+- Automatic idle/lock gating on reviewed Hyprland versions, failing closed when
+  activity signals are unavailable.
 - Optional window-title breakdown (often reflects the active browser tab).
 - Opt-in foot foreground-job executable tracking with explicit unknown fallbacks.
 - Pi/Claude title-derived session labels when both foot and title tracking are on.
@@ -17,9 +19,13 @@ Solidtime and not an integration with a hosted time-tracking service.
   recovery.
 
 **Important:** this measures foreground-window time, not verified active work.
-Automatic idle/lock detection and browser URLs are **not implemented**. Foot
-foreground-job attribution is opt-in and best-effort; shared-server windows and
-ambiguous jobs return unknown. Pause before leaving or locking.
+Automatic idle/lock gating requires the local Wayland helper and reviewed
+**Hyprland 0.56.2** lock capability. Missing/unsupported signals exclude time,
+not silently count it. Idle cutoff defaults to five minutes of input inactivity;
+pre-cutoff grace and polling/delivery latency can still be counted. Browser URLs
+are not resolved. Foot foreground-job attribution is opt-in and best-effort;
+shared-server windows and ambiguous jobs return unknown. See
+[activity semantics and limitations](poc/docs/activity.md).
 
 ## Set up on another computer
 
@@ -34,6 +40,9 @@ Prerequisites (install separately if missing):
 - Git, a C linker/build toolchain, pkg-config, and the Linux/XCB development
   libraries required by x-win; see [its build notes](x-win/README.md#linux).
 - Linux `flock` (usually supplied by util-linux) for checkpoint locking.
+- For automatic activity gating: a C compiler, `wayland-client` development
+  files, `wayland-scanner`, and `wayland-protocols` containing ext-idle-notify v2.
+  Nothing is installed or configured by the tracker.
 
 ```sh
 git clone --recurse-submodules https://github.com/PedDavid/time-tracker.git
@@ -43,6 +52,9 @@ cd time-tracker
 cp native.Cargo.lock x-win/Cargo.lock
 cargo build --manifest-path x-win/Cargo.toml --locked
 cp x-win/target/debug/libx_win_napi.so x-win/target/debug/x-win.node
+
+# Build the small read-only Wayland idle helper (no downloads/installs).
+sh poc/build-activity-helper.sh
 
 # Run inside the intended Hyprland session, as your regular desktop user.
 node poc/tracker.cjs
@@ -65,7 +77,8 @@ The submodule pins x-win revision
 branch. `native.Cargo.lock` pins the root N-API crate's Rust dependency resolution.
 To pull later tracker updates, use `git pull` followed by
 `git submodule update --init --recursive`, then rebuild the native addon if the
-submodule or lockfile changed. Do not use `git submodule update --remote` unless
+submodule or lockfile changed. Rebuild the activity helper after its source or
+Wayland protocol dependencies change. Do not use `git submodule update --remote` unless
 you intentionally want an unpinned dependency revision.
 
 ## Use
@@ -88,6 +101,13 @@ node poc/tracker.cjs --foot --titles --state ./state/foot.json --html ./foot-rep
 # A separate session history, with checkpoints every two seconds.
 node poc/tracker.cjs --titles --state ./state/work.json --flush 2
 
+# Change the idle cutoff to one minute (seconds).
+node poc/tracker.cjs --idle-timeout 60
+
+# Explicit fallback on an unsupported desktop; pause manually before leaving.
+# This disables automatic idle AND lock gating.
+node poc/tracker.cjs --no-activity
+
 # No checkpoint persistence at all.
 node poc/tracker.cjs --no-state
 ```
@@ -109,7 +129,7 @@ plus scheduling/I/O delay. Storage failures can prevent saving; warnings go to
 stderr. This is a latest-state checkpoint, not a backup or an audit log.
 Checkpoints are local to each computer; there is no automatic sync or merge.
 
-Reports are written only when `--html` is supplied, and never overwrite an
+Reports are written on exit only when `--html` is supplied, and never overwrite an
 existing file. The included [example report](poc/example-report.html) contains
 **synthetic data only**. Download/open it locally to preview the design.
 Generated reports, checkpoints, and binaries are Git-ignored. Custom filenames
@@ -136,14 +156,17 @@ node x-win/examples/hyprland-subscription-test.cjs x-win/target/debug/x-win.node
 node x-win/examples/hyprland-smoke.cjs x-win/target/debug/x-win.node
 ```
 
-Forty-two PoC tests passed locally, including SIGKILL/restart recovery,
-concurrent writer rejection, title opt-in boundaries, HTML injection/overwrite
-checks, and synthetic foot PTY/foreground-group attribution.
+All **56 PoC tests passed** locally. Optional compiled helper tests use a
+synthetic Wayland server and skip when development tools are unavailable.
+The suite covers SIGKILL/restart recovery, concurrent writer rejection,
+title opt-in boundaries, HTML injection/overwrite checks, synthetic foot
+PTY/foreground-group attribution, activity gating.
 Live checkpoint save/resume was also tested on Hyprland with zero IPC errors.
 
 ## Layout
 
-- `poc/` — Node tracker, accounting, checkpoints, HTML rendering and tests.
+- `poc/` — Node tracker, read-only C idle helper, accounting, checkpoints,
+  HTML rendering and tests.
 - `x-win/` — pinned Git submodule; Rust library and N-API addon, maintained in
   [PedDavid/x-win](https://github.com/PedDavid/x-win).
 - `native.Cargo.lock` — tested native dependency lockfile, copied into the

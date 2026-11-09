@@ -8,7 +8,10 @@ class Accounting {
     this.started = now
     this.updated = now
     this.elapsedBefore = restored?.elapsedMs || 0
-    this.paused = restored?.state.kind === 'paused'
+    this.paused = Boolean(restored?.manualPaused || restored?.state.kind === 'paused')
+    // The caller enables automatic gating explicitly; never restore an old
+    // activity signal (or focused window) from a checkpoint.
+    this.activity = 'active'
     this.focus = null
     this.focusTitle = null
     this.focusTerminal = null
@@ -22,6 +25,7 @@ class Accounting {
 
   state() {
     if (this.paused) return { kind: 'paused' }
+    if (this.activity !== 'active') return { kind: this.activity }
     if (this.availability !== 'ready') return { kind: this.availability }
     return this.focus ? { kind: 'tracking', app: this.focus } : { kind: 'no focus' }
   }
@@ -63,8 +67,21 @@ class Accounting {
     this.updated = now
   }
 
+  setActivity(signal, now) {
+    if (!signal || !['active', 'idle', 'locked', 'activity-unavailable'].includes(signal.kind)) throw new Error('Invalid activity signal')
+    this.accrue(now)
+    if (this.activity !== signal.kind) {
+      this.focus = null
+      this.focusTitle = null
+      this.focusTerminal = null
+      this.availability = 'waiting'
+    }
+    this.activity = signal.kind
+  }
+
   observe(app, now, title = null, terminal = null) {
     this.accrue(now)
+    if (this.activity !== 'active') return
     this.focus = app || null
     this.focusTitle = title
     this.focusTerminal = terminal
@@ -98,6 +115,8 @@ class Accounting {
       terminals: [...this.terminals.values()].map((row) => ({ ...row })).sort((a, b) => b.ms - a.ms),
       agentLabels: [...this.agentLabels.values()].map((row) => ({ ...row })).sort((a, b) => b.ms - a.ms),
       state: this.state(),
+      manualPaused: this.paused,
+      activity: this.activity,
     }
   }
 }

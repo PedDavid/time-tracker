@@ -197,7 +197,8 @@ test('CLI foot polling runs without title events and survives checkpoint/HTML ex
       exports.subscribeActiveWindow = () => 1; // no title/focus callbacks at all
       exports.unsubscribeActiveWindow = () => require('node:fs').writeFileSync(${JSON.stringify(calls)}, String(calls));
     `)
-    const args = [join(__dirname, 'tracker.cjs'), '--native', fixture, '--state', state, '--foot', '--foot-interval', '500', '--duration', '0.65', '--json', '--html', html]
+    // Synthetic foot attribution is independent of desktop activity sensors.
+    const args = [join(__dirname, 'tracker.cjs'), '--no-activity', '--native', fixture, '--state', state, '--foot', '--foot-interval', '500', '--duration', '0.65', '--json', '--html', html]
     const result = spawnSync(process.execPath, args, { encoding: 'utf8', timeout: 3000 })
     assert.equal(result.status, 0, result.stderr)
     const report = JSON.parse(result.stdout)
@@ -217,7 +218,7 @@ test('CLI foot polling runs without title events and survives checkpoint/HTML ex
     const old = JSON.parse(readFileSync(state, 'utf8'))
     old.titlesEnabled = true
     writeFileSync(namedState, JSON.stringify(old), { mode: 0o600 })
-    const named = spawnSync(process.execPath, [join(__dirname, 'tracker.cjs'), '--native', fixture,
+    const named = spawnSync(process.execPath, [join(__dirname, 'tracker.cjs'), '--no-activity', '--native', fixture,
       '--state', namedState, '--foot', '--titles', '--duration', '0.12', '--json'], { encoding: 'utf8', timeout: 3000 })
     assert.equal(named.status, 0, named.stderr)
     const upgraded = JSON.parse(readFileSync(namedState, 'utf8'))

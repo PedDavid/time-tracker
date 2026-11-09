@@ -20,7 +20,8 @@ test('SIGKILL recovery retains titles/totals, releases writer lock, and excludes
       exports.subscribeActiveWindow = () => 1;
       exports.unsubscribeActiveWindow = () => {};
     `)
-    const args = [join(__dirname, 'tracker.cjs'), '--native', fixture, '--state', state, '--flush', '0.1', '--titles', '--json']
+    // Test crash recovery independently of desktop activity availability.
+    const args = [join(__dirname, 'tracker.cjs'), '--no-activity', '--native', fixture, '--state', state, '--flush', '0.1', '--titles', '--json']
     child = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] })
     let stderr = ''
     child.stderr.on('data', (chunk) => { stderr += chunk })

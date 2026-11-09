@@ -17,13 +17,16 @@ cp native.Cargo.lock x-win/Cargo.lock
 cargo build --manifest-path x-win/Cargo.toml --locked
 cp x-win/target/debug/libx_win_napi.so x-win/target/debug/x-win.node
 
+# Build the read-only ext-idle-notify v2 helper. Requires Wayland development tools.
+sh poc/build-activity-helper.sh
+
 # Start tracking and switch between your applications.
 node poc/tracker.cjs
 ```
 
 Controls (single keys in an interactive terminal):
 
-- **p** — pause/resume (pause before leaving or locking).
+- **p** — independent manual pause/resume (always available).
 - **r** — refresh the report immediately.
 - **q** or **Ctrl+C** — stop, print final totals, and write HTML if requested.
 
@@ -64,6 +67,37 @@ node poc/tracker.cjs --help
 Copying `native.Cargo.lock` into the submodule makes the first build work with
 `--locked`, even on a fresh checkout. The native artifact is explicitly loaded
 by path; this cannot silently use an installed platform package.
+
+## Automatic idle/lock gating
+
+Automatic gating is **on by default**. It uses a separate read-only Wayland
+ext-idle-notify v2 helper for input inactivity and bounded direct Hyprland IPC
+for compositor lock state. The lock diagnostic has been source-reviewed for
+**Hyprland 0.56.2 only**; other versions fail closed until reviewed. It does not
+trust logind hints, infer activity from titles/focus, acquire input devices,
+change idle settings, inhibit idle, or request a lock/unlock.
+
+Idle, locked and unavailable-signal time is excluded. Startup requires fresh
+input evidence; an initially non-idle protocol object is not proof of presence.
+After every automatic gate, focus and foot context must be observed afresh.
+Manual pause remains independent and survives automatic transitions/restarts.
+A missing/unbuilt helper or unsupported capability leaves the tracker in
+`activity-unavailable`, not silently tracking away time.
+
+```sh
+node poc/tracker.cjs --idle-timeout 60  # cutoff in seconds; default 300
+
+# Explicit fallback only: no automatic idle OR lock gating.
+# Pause manually before stepping away/locking when using this option.
+node poc/tracker.cjs --no-activity
+```
+
+The pre-cutoff grace period is counted, not retroactively removed. Lock and
+idle boundaries have polling/delivery latency; prolonged scheduling gaps and
+suspend are handled conservatively. Activity policy saved in a checkpoint
+describes its current run, not proof that all resumed historical totals were
+collected under that policy. See [full capabilities, build instructions and
+limitations](docs/activity.md). No desktop configuration is edited.
 
 ## Crash recovery and checkpoint flushing
 
@@ -198,7 +232,8 @@ jobs in other process groups are excluded. Foreground `ssh`/`tmux`/`screen` are
 reported as those local executables, not a remote command or active pane.
 Shell built-ins remain the shell; wrapper scripts may remain their wrapper
 interpreter. Short commands can be missed between polls. When paused, enrichment
-scans are skipped and terminal time is not accrued.
+scans are skipped and terminal time is not accrued. Automatic idle/lock and
+unavailable-activity gates also skip enrichment and clear stale context.
 
 For a manual check, run the tracker in one terminal and use another foot window
 for shell/editor/build commands. While the tracker's own terminal is focused,
@@ -221,7 +256,11 @@ for the exact proof requirements, bounds, internal context and limitations.
    Confirm command rows change even without title changes. A background job
    should not replace the foreground command. Pipelines/shared foot owners may
    correctly report unknown. This is a manual live acceptance check.
-5. Press **q**. Application totals plus excluded time should equal elapsed time
+5. With a short `--idle-timeout`, wait without input, then resume input. Separately
+   test your normal lock/unlock and suspend/resume workflow; verify excluded
+   buckets and fresh context on return. These are manual acceptance checks,
+   not actions the automated tests perform.
+6. Press **q**. Application totals plus excluded time should equal elapsed time
    (human-readable output truncates individual values to whole seconds).
 
 For actual empty-focus transitions, the compositor must report no active
@@ -234,7 +273,9 @@ IPC error and recovery are also covered by deterministic synthetic tests.
 - Native subscription observes ID/title changes at 100 ms by default. Application
   totals use compositor class (fallback: executable basename). With `--titles`,
   a separate detail table groups time by application and observed window title.
-- No focus, startup waiting, IPC outages and manual pause are excluded.
+- No focus, startup waiting, IPC outages and manual pause are excluded. With
+  automatic gating enabled, idle, locked and unavailable-activity time is also
+  excluded; stale focus/foot context is cleared across gates.
 - An IPC error clears the current application until the subscription recovers.
 - Focus changes while paused are remembered, but not billed.
 - Titles are not inspected or retained by the PoC **unless `--titles` is set**.
@@ -247,14 +288,16 @@ IPC error and recovery are also covered by deterministic synthetic tests.
   environment, terminal contents or project paths are read. Opt-in titles may
   still contain private text, independently of terminal attribution.
 - Checkpoints now persist application totals, excluded time, a session-start
-  timestamp, errors, opted-in title details and opted-in foot executable totals. Use `--no-state`
+  timestamp, errors, current activity policy, opted-in title details and opted-in
+  foot executable totals. No input-event contents or raw event timeline are saved. Use `--no-state`
   to disable that persistence. `--html PATH` separately creates an HTML report.
   Both files can contain private activity history. No full event timeline is
   kept. Stdout redirection is also your choice; scrollback may retain reports.
 
-**This measures foreground-window time, not verified active work.** There is
-**no automatic idle or reliable session-lock detection**. A focused application
-can accrue time while you are away or locked. Pause manually; don't use this
+**This measures foreground-window time, not verified active work.**
+Automatic idle/lock gating is conservative, capability-limited and subject to
+latency; it is not proof of engagement. With `--no-activity`, a focused
+application can accrue time while away/locked, so pause manually. Don't use this
 PoC for billing or attendance. Brief focus changes can be missed between polls,
 and attribution boundaries have polling/delivery latency. IPC failure is only
 known when detected; the preceding detection interval can still be attributed.
@@ -274,8 +317,11 @@ Tests cover exact accounting, app switches, repeated observations, no focus,
 pause/resume, outage/recovery, monotonic time, duration conservation, privacy,
 CLI shutdown, invalid options, title opt-in boundaries, HTML escaping, offline
 output, private file permissions, and refusal to overwrite reports. They do not
-require a compositor. All **42 tests passed** after adding agent label correlation.
-New tests cover atomic round trips, concurrent writer rejection, SIGKILL and
+require a compositor. All **56 tests passed** locally, including the optional
+compiled helper test against a synthetic Wayland server (skipped when its
+existing development tools are unavailable). New activity tests mock idle/lock transitions, startup,
+disconnections, suspend/stalls, stale observations and manual-pause independence.
+Recovery tests cover atomic round trips, concurrent writer rejection, SIGKILL and
 restart recovery, title retention/privacy, downtime exclusion, paused recovery,
 corrupt data, symlink rejection, and write failure preserving the old checkpoint.
 

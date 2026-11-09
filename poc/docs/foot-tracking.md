@@ -126,7 +126,9 @@ checkpoint persistence; `--html` independently requests report persistence.
   remote program. Shell built-ins remain the shell.
 - Short commands between polls can be missed. Changes are attributed at
   observation/delivery time, not exact exec timestamps.
-- This does not add idle/lock detection. Pause manually when leaving/locking.
+- Foot attribution does not determine activity itself. The tracker's separate
+  [activity gate](activity.md) excludes idle/lock/unavailable periods and refreshes
+  foot context on return. With `--no-activity`, pause manually when leaving/locking.
 - Group reparenting/fork/exec/focus changes can race with a scan despite the
   revalidation. Unknown outcomes are expected and shown with reasons.
 

@@ -5,6 +5,7 @@
 *.json.lock
 .*.tmp
 *.node
+/poc/.activity-build/
 /reports/
 /state/
 node_modules/

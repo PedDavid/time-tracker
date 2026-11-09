@@ -23,7 +23,19 @@ function validate(record, titlesEnabled, footEnabled = false) {
   }
   const s = record.snapshot
   if (!s || !finite(s.elapsedMs) || !finite(s.trackedMs) || !Array.isArray(s.details) ||
-      !s.state || !['waiting', 'tracking', 'paused', 'no focus', 'IPC unavailable'].includes(s.state.kind)) fail()
+      !s.state || !['waiting', 'tracking', 'paused', 'no focus', 'IPC unavailable', 'idle', 'locked', 'activity-unavailable'].includes(s.state.kind)) fail()
+  const activityKinds = ['active', 'idle', 'locked', 'activity-unavailable']
+  if (s.manualPaused !== undefined && (typeof s.manualPaused !== 'boolean' || s.manualPaused !== (s.state.kind === 'paused'))) fail()
+  if (s.activity !== undefined && (!activityKinds.includes(s.activity) ||
+      (s.state.kind !== 'paused' && (s.activity === 'active' ? activityKinds.slice(1).includes(s.state.kind) : s.state.kind !== s.activity)))) fail()
+  if (record.activityDetection !== undefined) {
+    const a = record.activityDetection
+    if (!a || typeof a.enabled !== 'boolean' || !Number.isInteger(a.idleTimeoutMs) || a.idleTimeoutMs < 1000 || a.idleTimeoutMs > 86400000 ||
+        a.idleSource !== 'ext-idle-notify-v2-input' || a.lockSource !== 'hyprland-monitors-solitary' || a.lockScope !== 'hyprland-0.56.2-polled') fail()
+    if (s.manualPaused === undefined || s.activity === undefined ||
+        (a.historyComplete !== undefined && (typeof a.historyComplete !== 'boolean' || (a.historyComplete && !a.enabled))) ||
+        (!a.enabled && s.activity !== 'active')) fail()
+  }
   const pairs = (rows, maxLength) => {
     if (!Array.isArray(rows)) fail()
     const seen = new Set()
@@ -37,6 +49,8 @@ function validate(record, titlesEnabled, footEnabled = false) {
   }
   const tracked = pairs(s.apps, 80)
   const excluded = pairs(s.excluded, 80)
+  if (s.excluded.some(([kind]) => !['waiting', 'paused', 'no focus', 'IPC unavailable', 'idle', 'locked', 'activity-unavailable'].includes(kind))) fail()
+  if (s.state.kind === 'tracking' && (typeof s.state.app !== 'string' || !s.state.app || s.state.app.length > 80 || /[\p{C}\p{Zl}\p{Zp}]/u.test(s.state.app))) fail()
   if (!finite(tracked) || !finite(excluded) || Math.abs(tracked - s.trackedMs) > 1 || Math.abs(tracked + excluded - s.elapsedMs) > 1) fail()
   const apps = new Map(s.apps)
   const detailTotals = new Map()

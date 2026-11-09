@@ -5,4 +5,5 @@
 *.json.lock
 .*.tmp
 *.node
+.activity-build/
 node_modules/

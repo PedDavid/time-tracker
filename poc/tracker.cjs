@@ -9,6 +9,7 @@ const { Accounting } = require('./accounting.cjs')
 const { FootObserver } = require('./foot-observer.cjs')
 const { writeHtml } = require('./html-report.cjs')
 const { Checkpoint } = require('./checkpoint.cjs')
+const { ActivityProvider, ActivityGate, activityMetadata } = require('./activity.cjs')
 
 function options(args) {
   const result = {
@@ -20,6 +21,9 @@ function options(args) {
     html: null,
     titles: false,
     foot: false,
+    activity: true,
+    'idle-timeout': 300,
+    'activity-helper': resolve(__dirname, '.activity-build/activity-idle'),
     'foot-interval': 1000,
     state: join(process.env.XDG_STATE_HOME || join(homedir(), '.local/state'), 'focus-tracker', 'session.json'),
     flush: 5,
@@ -38,20 +42,24 @@ Usage: node poc/tracker.cjs [options]
   --titles              Opt in to window-title collection (may contain private data)
   --foot                Opt in to local foreground-executable tracking for foot
   --foot-interval MS    Foot context refresh, 500–60000 (default 1000)
+  --idle-timeout SEC    Exclude input-idle time after 1–86400 seconds (default 300)
+  --activity-helper PATH  Locally built read-only Wayland idle helper
+  --no-activity         Explicitly disable automatic idle/lock gating (unsafe away)
   --state PATH          Checkpoint path; resume saved totals automatically
   --flush SECONDS       Checkpoint interval, 0.1–3600 (default 5)
   --no-state            Ephemeral session; disable checkpoint/recovery
-Interactive: p = pause/resume, r = report, q = quit. Lock/idle are NOT detected.`)
+Interactive: p = pause/resume, r = report, q = quit. See poc/docs/activity.md for capabilities.`)
       return null
     }
     if (flag === '--json') { result.json = true; continue }
     if (flag === '--titles') { result.titles = true; continue }
     if (flag === '--foot') { result.foot = true; continue }
     if (flag === '--no-state') { result.noState = true; continue }
-    if (!['--native', '--html', '--state', '--flush', '--duration', '--interval', '--refresh', '--foot-interval'].includes(flag)) throw new Error(`Unknown option: ${flag}`)
+    if (flag === '--no-activity') { result.activity = false; continue }
+    if (!['--native', '--html', '--state', '--flush', '--duration', '--interval', '--refresh', '--foot-interval', '--idle-timeout', '--activity-helper'].includes(flag)) throw new Error(`Unknown option: ${flag}`)
     const value = args[++i]
     if (!value || value.startsWith('--')) throw new Error(`Missing value for ${flag}`)
-    if (flag === '--native' || flag === '--html' || flag === '--state') {
+    if (flag === '--native' || flag === '--html' || flag === '--state' || flag === '--activity-helper') {
       result[flag.slice(2)] = resolve(value)
       if (flag === '--state') result.customState = true
       continue
@@ -64,6 +72,7 @@ Interactive: p = pause/resume, r = report, q = quit. Lock/idle are NOT detected.
     throw new Error('--interval must be an integer between 50 and 60000 ms')
   }
   if (!Number.isInteger(result['foot-interval']) || result['foot-interval'] < 500 || result['foot-interval'] > 60000) throw new Error('--foot-interval must be an integer between 500 and 60000 ms')
+  if (result['idle-timeout'] < 1) throw new Error('--idle-timeout must be between 1 and 86400 seconds')
   if (result.refresh < 0.1) throw new Error('--refresh must be at least 0.1 seconds')
   if (result.flush < 0.1 || result.flush > 3600) throw new Error('--flush must be between 0.1 and 3600 seconds')
   if (result.noState && result.customState) throw new Error('Use --state or --no-state, not both')
@@ -98,15 +107,26 @@ function main() {
   let footTimer
   let footSoon
   const observer = new FootObserver({ native, ledger, clock, titles: config.titles, enabled: config.foot })
-  const pollFoot = () => { if (running && !observer.poll()) errors++ }
+  const gate = new ActivityGate({ native, ledger, observer, clock, onError: () => { errors++ } })
+  const activity = config.activity ? new ActivityProvider({ idleTimeoutMs: Math.round(config['idle-timeout'] * 1000), helper: config['activity-helper'], clock }) : null
+  if (activity) ledger.setActivity({ kind: 'activity-unavailable' }, clock())
+  const activityPolicy = activityMetadata(config.activity, Math.round(config['idle-timeout'] * 1000))
+  if (store?.record && store.record.activityDetection?.historyComplete !== true) activityPolicy.historyComplete = false
+  const pollFoot = () => {
+    activity?.checkHealth()
+    if (running && ledger.activity === 'active' && !observer.poll()) errors++
+  }
   const interactive = process.stdin.isTTY && !config.json
   const wasRaw = process.stdin.isRaw
 
   function snapshot() {
+    activity?.checkHealth()
     return {
       ...ledger.snapshot(clock()), errors, startedAt, titlesEnabled: config.titles, footEnabled: config.foot,
       measurement: 'foreground-window time, not verified active work',
-      idleDetection: false, lockDetection: false, persisted: checkpointFresh,
+      idleDetection: config.activity, lockDetection: config.activity,
+      activityDetection: { ...activityPolicy, status: ledger.activity, reason: activity?.reason || 'explicitly-disabled' },
+      persisted: checkpointFresh,
       checkpointEnabled: Boolean(store),
     }
   }
@@ -114,9 +134,10 @@ function main() {
   function flush(summary = snapshot()) {
     if (!store) return false
     try {
-      const { elapsedMs, trackedMs, apps, excluded, details, terminals, agentLabels, state } = summary
+      const { elapsedMs, trackedMs, apps, excluded, details, terminals, agentLabels, state, manualPaused, activity: activityState } = summary
       store.save({ version: config.foot ? (config.titles ? 3 : 2) : 1, startedAt, savedAt: new Date().toISOString(), titlesEnabled: config.titles, footEnabled: config.foot, errors,
-        snapshot: { elapsedMs, trackedMs, apps, excluded, details, terminals, agentLabels, state } })
+        activityDetection: activityPolicy,
+        snapshot: { elapsedMs, trackedMs, apps, excluded, details, terminals, agentLabels, state, manualPaused, activity: activityState } })
       checkpointFresh = true
       return true
     } catch (error) {
@@ -164,17 +185,21 @@ function main() {
     }
     console.log(`Tracked: ${duration(summary.trackedMs)} | IPC outages: ${errors}`)
     if (summary.excluded.length) console.log(`Excluded: ${summary.excluded.map(([kind, ms]) => `${kind} ${duration(ms)}`).join(', ')}`)
-    console.log('p pause/resume · r report · q quit · No idle/lock detection; pause before leaving/locking.')
+    console.log(`p pause/resume · r report · q quit · Activity gating ${config.activity ? `ON (${summary.activityDetection.status})` : 'OFF; pause before leaving/locking'}.`)
   }
 
   function stop() {
     if (!running) return
+    // A shutdown/control event can be the first callback after suspend or a
+    // stall. Apply its health transition before disabling the gate listener.
+    activity?.checkHealth()
     running = false
     clearInterval(refreshTimer)
     clearTimeout(stopTimer)
     clearInterval(flushTimer)
     clearInterval(footTimer)
     clearTimeout(footSoon)
+    activity?.close()
     if (subscription !== undefined) {
       try { native.unsubscribeActiveWindow(subscription) } catch { process.exitCode = 1 }
     }
@@ -187,6 +212,7 @@ function main() {
   }
 
   function keypress(text, key) {
+    activity?.checkHealth() // Never accrue a stale gap before pause/resume.
     if ((key?.ctrl && key.name === 'c') || text === 'q') { stop(); return }
     if (text === 'p') { ledger.togglePause(clock()); if (config.foot) pollFoot(); flush(); report() }
     if (text === 'r') report()
@@ -208,18 +234,25 @@ function main() {
     console.log(store ? `Private checkpoints every ${config.flush}s: ${config.state}${store.record ? ' (resuming saved totals)' : ''}` : 'Checkpointing disabled: session is in memory only.')
     if (config.html) console.log('HTML export enabled: a new report file will be saved on exit.')
     if (config.foot) console.log(`foot foreground tracking ON: proc metadata refresh every ${config['foot-interval']}ms; ambiguous associations report unknown.`)
-    console.log('Counts foreground-window time, not verified active work. No automatic idle/lock detection.')
+    console.log(`Counts foreground-window time, not verified active work. Automatic activity gating ${config.activity ? 'ON; unavailable signals exclude time. Move input once to establish activity.' : 'OFF; pause before leaving/locking.'}`)
+    if (config.activity) console.log('Requires built Wayland helper and reviewed Hyprland 0.56.2 lock capability; see poc/docs/activity.md.')
   }
   // Snapshot avoids attributing startup/load time to the first observed app.
-  try {
-    const window = native.activeWindow()
-    observer.observe(window)
-    if (config.foot) pollFoot()
-  } catch { errors++; observer.fail() }
+  if (activity) activity.start((signal) => { if (running) gate.signal(signal) })
+  else gate.refresh()
   try {
     subscription = native.subscribeActiveWindow((error, window) => {
       if (!running) return // Native callbacks already queued can arrive after unsubscribe.
+      activity?.checkHealth()
+      if (ledger.activity !== 'active') return
       if (error) { errors++; observer.fail(); return }
+      if (activity) {
+        // Queued subscription payloads may predate gate restoration. Never let
+        // one replace the newly established focus/context with cached data.
+        try { window = native.activeWindow() } catch { errors++; observer.fail(); return }
+        activity.checkHealth()
+        if (ledger.activity !== 'active') return
+      }
       if (observer.observe(window) && config.foot && !footSoon) {
         footSoon = setTimeout(() => { footSoon = null; pollFoot() }, 0)
       }

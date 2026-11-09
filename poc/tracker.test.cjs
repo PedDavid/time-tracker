@@ -29,7 +29,8 @@ test('CLI accounts synthetic focus changes, outage, recovery and shuts down clea
         timers.forEach(clearTimeout);
       };
     `)
-    const result = spawnSync(process.execPath, [join(__dirname, 'tracker.cjs'), '--no-state', '--native', fixture, '--duration', '0.35', '--json'], {
+    // These focus/accounting fixtures deliberately do not emulate activity sensors.
+    const result = spawnSync(process.execPath, [join(__dirname, 'tracker.cjs'), '--no-activity', '--no-state', '--native', fixture, '--duration', '0.35', '--json'], {
       encoding: 'utf8', timeout: 5000,
     })
     assert.equal(result.status, 0, result.stderr)
@@ -61,7 +62,7 @@ test('CLI exports HTML with titles only when explicitly enabled', () => {
     `)
     for (const enabled of [false, true]) {
       const htmlPath = join(dir, `${enabled}.html`)
-      const args = [join(__dirname, 'tracker.cjs'), '--no-state', '--native', fixture, '--duration', '0.1', '--json', '--html', htmlPath]
+      const args = [join(__dirname, 'tracker.cjs'), '--no-activity', '--no-state', '--native', fixture, '--duration', '0.1', '--json', '--html', htmlPath]
       if (enabled) args.push('--titles')
       const result = spawnSync(process.execPath, args, { encoding: 'utf8', timeout: 3000 })
       assert.equal(result.status, 0, result.stderr)
