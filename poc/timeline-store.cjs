@@ -154,7 +154,7 @@ function project(events, now = Date.now(), { from = now - 86400000, to = now, ag
     }
   }
   for (const s of sessions.values()) finish(s, now)
-  const visible = spans.filter(s => s.end > from && s.start < to && (!agent || s.agent === agent) && (!status || s.status === status))
+  const visible = spans.filter(s => s.end > from && s.start < to && (!agent || (agent === 'agents' ? s.agent !== 'human' : s.agent === agent)) && (!status || s.status === status))
     .map(s => ({ ...s, start: Math.max(from, s.start), end: Math.min(to, s.end) }))
     .sort((a, b) => a.start - b.start || a.actor.localeCompare(b.actor))
   const totals = { humanMs: 0, agentMs: 0, waitingMs: 0 }

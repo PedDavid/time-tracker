@@ -64,7 +64,7 @@ async function startServer({ directory = defaultDirectory(), port = 4318 } = {})
         const agent = url.searchParams.get('agent') || ''
         const status = url.searchParams.get('status') || ''
         if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to) || from < 0 || to <= from || to - from > 31 * 86400000 ||
-            !['', 'human', 'claude', 'pi', 'kiro-cli'].includes(agent) ||
+            !['', 'human', 'agents', 'claude', 'pi', 'kiro-cli'].includes(agent) ||
             !['', 'working', 'waiting', 'stopped', 'tracking', 'paused', 'idle', 'locked', 'no focus', 'IPC unavailable', 'activity-unavailable', 'unknown'].includes(status)) {
           res.writeHead(400).end('Invalid range or filter (maximum 31 days)'); return
         }
