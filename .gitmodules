@@ -1,0 +1,4 @@
+[submodule "x-win"]
+	path = x-win
+	url = https://github.com/PedDavid/x-win.git
+	branch = feat/hyprland-ipc

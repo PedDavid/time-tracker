@@ -1,0 +1,8 @@
+# Private generated reports and checkpoints are not source code.
+*.html
+!example-report.html
+*.json
+*.json.lock
+.*.tmp
+*.node
+node_modules/

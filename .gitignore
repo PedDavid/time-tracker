@@ -1,0 +1,10 @@
+# Private generated activity history/reports must never be published.
+*.html
+!/poc/example-report.html
+*.json
+*.json.lock
+.*.tmp
+*.node
+/reports/
+/state/
+node_modules/
