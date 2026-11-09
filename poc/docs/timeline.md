@@ -10,6 +10,17 @@ No npm install, database, Grafana instance, native addon, or compositor is neede
 for the collector, agents, or viewer. Node.js 22+ and Linux `flock` are required.
 The existing foreground tracker still needs its native/desktop prerequisites.
 
+## Screenshots
+
+These captures use synthetic activity only, with independent human, Claude,
+Pi, and Kiro CLI lanes. Agent execution overlaps personal focus, while waiting
+is displayed separately. No real prompts, window titles, or activity history
+are included.
+
+![Desktop timeline with parallel sessions, separate totals and span details](screenshots/timeline-desktop.png)
+
+<img src="screenshots/timeline-mobile.png" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
+
 ## Start the collector and viewer
 
 From the repository root:
