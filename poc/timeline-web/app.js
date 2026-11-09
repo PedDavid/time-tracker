@@ -1,6 +1,12 @@
 'use strict'
 const $ = id => document.getElementById(id)
 const state = { duration: 86400000, end: Date.now(), data: null, selected: null, request: 0 }
+$('theme-toggle').onclick = () => {
+  const dark = document.documentElement.dataset.theme !== 'dark'
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  $('theme-toggle').setAttribute('aria-pressed', String(dark))
+  $('theme-toggle').textContent = dark ? 'Light theme' : 'Dark theme'
+}
 const formatDuration = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 3600)}h ${Math.floor(s / 60) % 60}m ${s % 60}s` }
 const formatDate = ms => new Date(ms).toLocaleString()
 function element(tag, text, className) {
