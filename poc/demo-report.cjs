@@ -10,7 +10,13 @@ writeHtml(path, {
   elapsedMs: 75 * minute,
   trackedMs: 60 * minute,
   apps: [['librewolf', 30 * minute], ['foot', 20 * minute], ['fixture.Editor', 10 * minute]],
-  excluded: [['paused', 10 * minute], ['no focus', 4 * minute], ['IPC unavailable', minute]],
+  excluded: [['paused', 5 * minute], ['idle', 4 * minute], ['locked', 3 * minute], ['activity-unavailable', minute], ['no focus', minute], ['IPC unavailable', minute]],
+  activityDetection: {
+    enabled: true, idleTimeoutMs: 300000, historyComplete: true, status: 'active',
+    idleSource: 'ext-idle-notify-v2-input', lockSource: 'hyprland-monitors-solitary',
+    lockScope: 'hyprland-0.56.2-polled',
+  },
+  checkpoint: { asOf: '2026-01-01T10:15:00.000Z', timeSource: 'savedAt' },
   titlesEnabled: true,
   details: [
     { app: 'foot', title: 'π - Synthetic tracker task', ms: 8 * minute },

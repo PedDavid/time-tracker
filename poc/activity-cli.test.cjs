@@ -9,6 +9,7 @@ const { tmpdir } = require('node:os')
 const { spawn } = require('node:child_process')
 const { once } = require('node:events')
 const { setTimeout: sleep } = require('node:timers/promises')
+const { readCheckpoint } = require('./checkpoint-reader.cjs')
 
 // Every source is synthetic. This never connects to the real compositor or
 // creates physical input, a desktop lock, or a Wayland surface.
@@ -107,8 +108,8 @@ test('CLI lock gates reject stale payloads and shutdown excludes a blocked event
   publish(event, { sequence: 1, window: window('fixture.StaleBeforeLock') })
   await waitFor(() => fs.existsSync(ack))
   await waitFor((record) => appTime(record, 'fixture.After') > appTime(restored, 'fixture.After') + 100)
-  const saved = JSON.parse(fs.readFileSync(state, 'utf8'))
-  const exported = { ...saved.snapshot, activityDetection: { ...saved.activityDetection, status: saved.snapshot.activity } }
+  // This read is deliberately performed while the actual CLI writer holds flock.
+  const exported = readCheckpoint(state, true, false)
   assert.equal(exported.activityDetection.enabled, true)
   assert.equal(exported.activityDetection.historyComplete, true)
   assert.equal(exported.activityDetection.status, 'active')

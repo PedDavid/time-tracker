@@ -180,6 +180,26 @@ another without reading the desktop:
 node poc/demo-report.cjs ./example-report.html
 ```
 
+### Export while the tracker is running
+
+```sh
+# Last saved default checkpoint, with application-only collection policy:
+node poc/export-report.cjs --html ./snapshot-report.html
+
+# Explicit private state and matching opt-in settings:
+node poc/export-report.cjs --state ./state/foot.json --foot --titles \
+  --html ./foot-snapshot.html
+```
+
+This reads one atomically saved checkpoint without acquiring the writer lock,
+changing source files, querying live sources or billing additional time. It
+works without the native addon/compositor. The report displays the snapshot's
+as-of time and freshness warning: normally about five seconds behind, possibly
+much older. A legacy checkpoint without `savedAt` uses an explicitly labelled
+file-mtime fallback. The output must be a new file; input/output parent
+directories must already exist. `--titles`/`--foot` must match the saved policy
+exactly. See [live export security and semantics](docs/live-export.md).
+
 ### LibreWolf: active tab title, not a URL
 
 The backend already supplies the focused **window title**. `--titles` now opts
@@ -256,11 +276,13 @@ for the exact proof requirements, bounds, internal context and limitations.
    Confirm command rows change even without title changes. A background job
    should not replace the foreground command. Pipelines/shared foot owners may
    correctly report unknown. This is a manual live acceptance check.
-5. With a short `--idle-timeout`, wait without input, then resume input. Separately
+5. While tracking, export its checkpoint in another terminal. Confirm the writer
+   continues and the report's saved-at time advances after later checkpoints.
+6. With a short `--idle-timeout`, wait without input, then resume input. Separately
    test your normal lock/unlock and suspend/resume workflow; verify excluded
    buckets and fresh context on return. These are manual acceptance checks,
    not actions the automated tests perform.
-6. Press **q**. Application totals plus excluded time should equal elapsed time
+7. Press **q**. Application totals plus excluded time should equal elapsed time
    (human-readable output truncates individual values to whole seconds).
 
 For actual empty-focus transitions, the compositor must report no active
@@ -317,10 +339,12 @@ Tests cover exact accounting, app switches, repeated observations, no focus,
 pause/resume, outage/recovery, monotonic time, duration conservation, privacy,
 CLI shutdown, invalid options, title opt-in boundaries, HTML escaping, offline
 output, private file permissions, and refusal to overwrite reports. They do not
-require a compositor. All **56 tests passed** locally, including the optional
+require a compositor. All **74 tests passed** locally, including the optional
 compiled helper test against a synthetic Wayland server (skipped when its
 existing development tools are unavailable). New activity tests mock idle/lock transitions, startup,
 disconnections, suspend/stalls, stale observations and manual-pause independence.
+Export tests cover a live writer lock, atomic replacements, schema compatibility,
+privacy consent, bounded reads and unsafe files/outputs.
 Recovery tests cover atomic round trips, concurrent writer rejection, SIGKILL and
 restart recovery, title retention/privacy, downtime exclusion, paused recovery,
 corrupt data, symlink rejection, and write failure preserving the old checkpoint.

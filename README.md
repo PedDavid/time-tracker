@@ -15,6 +15,7 @@ Solidtime and not an integration with a hosted time-tracking service.
 - Pi/Claude title-derived session labels when both foot and title tracking are on.
 - Private atomic checkpoints every five seconds, with automatic recovery.
 - Self-contained HTML reports with charts and excluded-time breakdowns.
+- Read-only HTML export from the latest checkpoint while tracking continues.
 - Synthetic tests covering accounting, title privacy, export and forced-kill
   recovery.
 
@@ -115,6 +116,24 @@ node poc/tracker.cjs --no-state
 Keys: **p** pause/resume, **r** refresh terminal report, **q** quit and export.
 Ctrl+C also stops cleanly.
 
+### Export without stopping the tracker
+
+In another terminal, read its last atomically saved checkpoint:
+
+```sh
+node poc/export-report.cjs --html ./snapshot-report.html
+
+# Match the writer's state path and privacy flags exactly:
+node poc/export-report.cjs --state ./state/foot.json --foot --titles \
+  --html ./foot-snapshot.html
+```
+
+This needs no native addon or compositor and does not acquire the writer lock,
+change state, or add time after the saved snapshot. The HTML shows its as-of
+time: normally around five seconds behind, potentially much older after failed
+saves or a stopped tracker. Use a new output filename each time. See
+[live-checkpoint export](poc/docs/live-export.md).
+
 ### What gets saved
 
 Default checkpoint: `$XDG_STATE_HOME/focus-tracker/session.json`, falling back
@@ -129,8 +148,8 @@ plus scheduling/I/O delay. Storage failures can prevent saving; warnings go to
 stderr. This is a latest-state checkpoint, not a backup or an audit log.
 Checkpoints are local to each computer; there is no automatic sync or merge.
 
-Reports are written on exit only when `--html` is supplied, and never overwrite an
-existing file. The included [example report](poc/example-report.html) contains
+The tracker writes a report on exit only when `--html` is supplied; the separate
+export command can create one during tracking. Neither overwrites an existing file. The included [example report](poc/example-report.html) contains
 **synthetic data only**. Download/open it locally to preview the design.
 Generated reports, checkpoints, and binaries are Git-ignored. Custom filenames
 without the usual extensions might not match ignore rules: always inspect
@@ -156,17 +175,17 @@ node x-win/examples/hyprland-subscription-test.cjs x-win/target/debug/x-win.node
 node x-win/examples/hyprland-smoke.cjs x-win/target/debug/x-win.node
 ```
 
-All **56 PoC tests passed** locally. Optional compiled helper tests use a
+All **74 PoC tests passed** locally. Optional compiled helper tests use a
 synthetic Wayland server and skip when development tools are unavailable.
 The suite covers SIGKILL/restart recovery, concurrent writer rejection,
 title opt-in boundaries, HTML injection/overwrite checks, synthetic foot
-PTY/foreground-group attribution, activity gating.
+PTY/foreground-group attribution, activity gating and read-only live export.
 Live checkpoint save/resume was also tested on Hyprland with zero IPC errors.
 
 ## Layout
 
 - `poc/` — Node tracker, read-only C idle helper, accounting, checkpoints,
-  HTML rendering and tests.
+  offline/live-checkpoint HTML export and tests.
 - `x-win/` — pinned Git submodule; Rust library and N-API addon, maintained in
   [PedDavid/x-win](https://github.com/PedDavid/x-win).
 - `native.Cargo.lock` — tested native dependency lockfile, copied into the
