@@ -10,6 +10,7 @@ const { FootObserver } = require('./foot-observer.cjs')
 const { writeHtml } = require('./html-report.cjs')
 const { Checkpoint } = require('./checkpoint.cjs')
 const { ActivityProvider, ActivityGate, activityMetadata } = require('./activity.cjs')
+const { HumanTimeline } = require('./timeline-client.cjs')
 
 function options(args) {
   const result = {
@@ -48,19 +49,23 @@ Usage: node poc/tracker.cjs [options]
   --state PATH          Checkpoint path; resume saved totals automatically
   --flush SECONDS       Checkpoint interval, 0.1–3600 (default 5)
   --no-state            Ephemeral session; disable checkpoint/recovery
+  --timeline            Opt in to interval history for the local timeline app
+  --timeline-socket PATH  Collector socket (also enables --timeline)
 Interactive: p = pause/resume, r = report, q = quit. See poc/docs/activity.md for capabilities.`)
       return null
     }
     if (flag === '--json') { result.json = true; continue }
     if (flag === '--titles') { result.titles = true; continue }
     if (flag === '--foot') { result.foot = true; continue }
+    if (flag === '--timeline') { result.timeline = true; continue }
     if (flag === '--no-state') { result.noState = true; continue }
     if (flag === '--no-activity') { result.activity = false; continue }
-    if (!['--native', '--html', '--state', '--flush', '--duration', '--interval', '--refresh', '--foot-interval', '--idle-timeout', '--activity-helper'].includes(flag)) throw new Error(`Unknown option: ${flag}`)
+    if (!['--native', '--html', '--state', '--flush', '--duration', '--interval', '--refresh', '--foot-interval', '--idle-timeout', '--activity-helper', '--timeline-socket'].includes(flag)) throw new Error(`Unknown option: ${flag}`)
     const value = args[++i]
     if (!value || value.startsWith('--')) throw new Error(`Missing value for ${flag}`)
-    if (flag === '--native' || flag === '--html' || flag === '--state' || flag === '--activity-helper') {
+    if (flag === '--native' || flag === '--html' || flag === '--state' || flag === '--activity-helper' || flag === '--timeline-socket') {
       result[flag.slice(2)] = resolve(value)
+      if (flag === '--timeline-socket') result.timeline = true
       if (flag === '--state') result.customState = true
       continue
     }
@@ -95,7 +100,9 @@ function main() {
   }
   const clock = () => performance.now()
   const store = config.state ? new Checkpoint(config.state, config.titles, config.foot) : null
-  const ledger = new Accounting(clock(), store?.record?.snapshot)
+  const initialTime = clock()
+  const timeline = config.timeline ? new HumanTimeline({ socket: config['timeline-socket'], now: initialTime }) : null
+  const ledger = new Accounting(initialTime, store?.record?.snapshot, timeline ? (...args) => timeline.record(...args) : null)
   const startedAt = store?.record?.startedAt || new Date().toISOString()
   let running = true
   let errors = store?.record?.errors || 0
@@ -106,6 +113,7 @@ function main() {
   let flushTimer
   let footTimer
   let footSoon
+  let timelineTimer
   const observer = new FootObserver({ native, ledger, clock, titles: config.titles, enabled: config.foot })
   const gate = new ActivityGate({ native, ledger, observer, clock, onError: () => { errors++ } })
   const activity = config.activity ? new ActivityProvider({ idleTimeoutMs: Math.round(config['idle-timeout'] * 1000), helper: config['activity-helper'], clock }) : null
@@ -199,6 +207,7 @@ function main() {
     clearInterval(flushTimer)
     clearInterval(footTimer)
     clearTimeout(footSoon)
+    clearInterval(timelineTimer)
     activity?.close()
     if (subscription !== undefined) {
       try { native.unsubscribeActiveWindow(subscription) } catch { process.exitCode = 1 }
@@ -208,7 +217,7 @@ function main() {
       process.stdin.setRawMode(Boolean(wasRaw))
       process.stdin.pause()
     }
-    try { report(true) } finally { store?.close() }
+    try { report(true) } finally { store?.close(); void timeline?.flush() }
   }
 
   function keypress(text, key) {
@@ -263,6 +272,7 @@ function main() {
   }
   if (config.foot) footTimer = setInterval(pollFoot, config['foot-interval'])
   if (store) { flush(); flushTimer = setInterval(flush, config.flush * 1000) }
+  if (timeline) timelineTimer = setInterval(() => { snapshot(); void timeline.flush() }, 5000)
   if (!config.json) { report(); refreshTimer = setInterval(report, config.refresh * 1000) }
   if (config.duration !== null) stopTimer = setTimeout(stop, config.duration * 1000)
 }

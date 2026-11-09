@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Focus · Timeline</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<header><div class="brand"><span class="mark" aria-hidden="true">◷</span><div><h1>time-tracker <span>/ Timeline</span></h1><p>Your time, in focus.</p></div></div><div class="header-tools"><div class="connection"><span id="dot"></span><span id="connection" role="status">Connecting</span></div><button id="theme-toggle" type="button" aria-pressed="false">Dark theme</button></div></header>
+<main>
+
+<section class="toolbar" aria-label="Timeline controls">
+<label class="include-agents"><input id="include-agents" type="checkbox"> Include agents</label>
+<label id="agent-filter" hidden>Agent<select id="agent"><option value="agents">All agents</option><option>claude</option><option>pi</option><option>kiro-cli</option></select></label>
+<label>Your activity<select id="status"><option value="">All activity</option><option value="tracking">Focused</option><option value="paused">Paused</option><option value="idle">Idle</option><option value="locked">Locked</option><option value="waiting">Waiting</option><option value="activity-unavailable">Activity unavailable</option><option value="IPC unavailable">IPC unavailable</option><option value="no focus">No focus</option></select></label>
+<label>Range<select id="range"><option value="900000">15 minutes</option><option value="3600000">1 hour</option><option value="21600000">6 hours</option><option value="86400000" selected>24 hours</option></select></label>
+<div class="navigation"><button id="previous" aria-label="Previous time range">←</button><button id="next" aria-label="Next time range">→</button><button id="zoom-in" aria-label="Zoom in">＋</button><button id="zoom-out" aria-label="Zoom out">−</button></div>
+<label class="live"><input type="checkbox" id="live" checked> Live</label><button id="export">Export JSON</button>
+</section>
+<details class="custom"><summary>Choose exact dates</summary><form id="dates"><label>From<input id="from" type="datetime-local" required></label><label>To<input id="to" type="datetime-local" required></label><button>Apply range</button></form></details>
+<section class="metrics" aria-label="Totals in selected range"><article id="human-metric"><span>Your focused time</span><strong id="human-total">—</strong><small>Foreground activity</small></article><article id="agent-metric" hidden><span>Agent execution</span><strong id="agent-total">—</strong><small>Concurrent sessions counted separately</small></article><article id="waiting-metric" hidden><span>Agents waiting</span><strong id="waiting-total">—</strong><small>Excluded from execution</small></article></section>
+<section class="panel"><div class="panel-heading"><div><h2 id="trace-title">Your activity</h2><p id="range-label">Loading your timeline…</p></div><div class="legend"><span id="legend-active" class="active">Focused</span><span class="excluded">Excluded / waiting</span></div></div><div id="notice" role="status"></div><div id="timeline" aria-label="Activity timeline"></div><div id="empty" hidden><h3 id="empty-title">No personal activity in this range</h3><p id="empty-help">Start the focus tracker with <code>--timeline</code> to record your activity.</p><p>Older summary checkpoints have no timeline history.</p></div></section>
+<section id="inspector" class="panel inspector" aria-label="Selected span details"><h2>Span details</h2><p>Select a span to inspect its actor, activity, start, end and duration.</p></section>
+<footer>Local data · No external assets or telemetry <span id="agent-note" hidden>Concurrent agent wall time is separate from your focused time. Unknown intervals are excluded.</span><span>Claude and LibreWolf icons: selfh.st/icons, CC BY 4.0; embedded SVGs adapted for HTML.</span></footer>
+</main>
+</body></html>

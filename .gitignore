@@ -1,6 +1,7 @@
 # Private generated activity history/reports must never be published.
 *.html
 !/poc/example-report.html
+!/poc/timeline-web/index.html
 *.json
 *.json.lock
 .*.tmp
@@ -9,3 +10,4 @@
 /reports/
 /state/
 node_modules/
+*.jsonl

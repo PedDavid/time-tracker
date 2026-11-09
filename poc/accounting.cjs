@@ -4,7 +4,8 @@
 // Titles are optional, explicitly supplied by the caller. Never receives PIDs,
 // full executable paths, or command arguments.
 class Accounting {
-  constructor(now, restored = null) {
+  constructor(now, restored = null, onInterval = null) {
+    this.onInterval = onInterval
     this.started = now
     this.updated = now
     this.elapsedBefore = restored?.elapsedMs || 0
@@ -34,6 +35,7 @@ class Accounting {
     if (!Number.isFinite(now) || now < this.updated) throw new Error('Clock must be monotonic')
     const duration = now - this.updated
     const state = this.state()
+    if (duration > 0) this.onInterval?.(state, this.updated, now, this.focusTitle)
     const bucket = state.kind === 'tracking' ? this.apps : this.excluded
     const key = state.app || state.kind
     bucket.set(key, (bucket.get(key) || 0) + duration)

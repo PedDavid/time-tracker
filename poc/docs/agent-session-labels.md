@@ -54,10 +54,11 @@ with the new code; a running Node process does not hot-reload this feature.
   title privacy limitations still apply.
 
 For verified agent session names/IDs independent of the terminal title, the
-next step would be an explicit **opt-in metadata bridge** from each agent. Pi's
-extension API has `getSessionName()`/session identity access, but using it here
-would require separate integration design and approval. This PoC does not scan
-agent history folders or guess a session from the latest modified file.
+separate [timeline integrations](timeline.md) now provide an opt-in lifecycle
+bridge for Claude, Pi and Kiro CLI. These use opaque per-run IDs and track
+background execution independently of foreground title labels. They do not
+collect session names or scan history folders. This label breakdown remains
+window-title derived and is not used as the background accounting source.
 
 ## Persistence and compatibility
 
