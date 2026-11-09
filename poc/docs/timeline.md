@@ -12,6 +12,10 @@ The existing foreground tracker still needs its native/desktop prerequisites.
 The viewer uses the report's compact neutral theme: light by default, with a
 keyboard-accessible **Dark theme / Light theme** toggle. Switching themes does
 not change the selected range, filters, span selection, or recorded totals.
+Each session is split into slim, labeled activity rows: agent working/waiting
+states, individual applications, and excluded states occupy distinct vertical
+tracks. Hover or select an interval for details; its label stays on the Y axis
+instead of being repeated inside every bar.
 
 ## Screenshots
 
@@ -22,15 +26,15 @@ are included.
 
 ### Light theme
 
-![Light timeline with parallel sessions, separate totals and span details](https://github.com/PedDavid/time-tracker/blob/7468369cd378220e556790e7f11922a3685e2671/poc/docs/screenshots/timeline-desktop.png?raw=true)
+![Light timeline with parallel sessions, separate totals and span details](https://github.com/PedDavid/time-tracker/blob/379b69b644f289442d3304180a0f630a2b8c6cd9/poc/docs/screenshots/timeline-desktop.png?raw=true)
 
 ### Dark theme
 
-![Dark timeline with parallel sessions and selected span details](https://github.com/PedDavid/time-tracker/blob/7468369cd378220e556790e7f11922a3685e2671/poc/docs/screenshots/timeline-dark.png?raw=true)
+![Dark timeline with parallel sessions and selected span details](https://github.com/PedDavid/time-tracker/blob/379b69b644f289442d3304180a0f630a2b8c6cd9/poc/docs/screenshots/timeline-dark.png?raw=true)
 
 ### Mobile
 
-<img src="https://github.com/PedDavid/time-tracker/blob/7468369cd378220e556790e7f11922a3685e2671/poc/docs/screenshots/timeline-mobile.png?raw=true" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
+<img src="https://github.com/PedDavid/time-tracker/blob/379b69b644f289442d3304180a0f630a2b8c6cd9/poc/docs/screenshots/timeline-mobile.png?raw=true" alt="Mobile timeline with responsive controls and horizontally scrollable lanes" width="430">
 
 ## Start the collector and viewer
 
